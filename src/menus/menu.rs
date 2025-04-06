@@ -1,8 +1,7 @@
 use bevy::{app::AppExit, color::palettes::css::CRIMSON, prelude::*};
 
-use crate::globals::GameState;
-use crate::resources::{DisplayQuality, Volume};
-use crate::systems::{
+use crate::globals::{GameState,DisplayQuality, Volume};
+use crate::menus::{
     despawn_screen,
     ui::{
         button_system, create_slider_text, drag_slider_system, setting_button,

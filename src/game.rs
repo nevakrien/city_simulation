@@ -1,4 +1,4 @@
-use crate::systems::ui::TEXT_COLOR;
+use crate::menus::ui::TEXT_COLOR;
 use bevy::{
     color::palettes::basic::{BLUE, LIME},
     prelude::*,
@@ -14,9 +14,8 @@ use bevy::{
     },
 };
 
-use crate::globals::GameState;
-use crate::resources::{DisplayQuality, Volume};
-use crate::systems::despawn_screen;
+use crate::globals::{GameState,DisplayQuality, Volume};
+use crate::common::despawn_screen;
 
 /// trying to run some intresting shaders
 const ANIMATE_SHADER_PATH: &str = "bevy_examples/shaders/animate_shader.wgsl";

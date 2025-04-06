@@ -1,7 +1,7 @@
 #![allow(clippy::type_complexity)]//Queries shouldnt trigger clippy they are clearer that way
 
 use std::fmt::Display;
-use crate::resources::Slidble;
+use crate::globals::Slidble;
 use std::marker::PhantomData;
 use bevy::prelude::*;
 

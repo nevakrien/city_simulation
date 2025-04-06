@@ -3,13 +3,14 @@
 //! settings for 5 seconds before going back to the menu.
 
 use bevy::prelude::*;
-use globals::GameState;
-use resources::{DisplayQuality, Volume};
-use systems::{game, menu, splash};
 
-mod globals;
-mod resources;
-mod systems;
+
+use city_simulation::globals::GameState;
+use city_simulation::game;
+use city_simulation::globals::{DisplayQuality, Volume};
+use city_simulation::menus::{menu, splash};
+
+
 
 fn main() {
     App::new()
