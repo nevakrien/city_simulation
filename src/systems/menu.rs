@@ -6,7 +6,7 @@ use crate::systems::{
     despawn_screen,
     ui::{
         button_system, create_slider_text, drag_slider_system, setting_button,
-        spawn_slider_system, update_slider_value_text, COLOR_GRAY, COLOR_MAROON, COLOR_RED,
+        spawn_slider_system, update_resource_text, COLOR_GRAY, COLOR_MAROON, COLOR_RED,
         COLOR_WHITE, NORMAL_BUTTON, SelectedOption, TEXT_COLOR,
     },
 };
@@ -50,7 +50,7 @@ pub fn menu_plugin(app: &mut App) {
             Update,
             (   
                 drag_slider_system::<Volume>,
-                update_slider_value_text::<Volume>.run_if(resource_changed::<Volume>)
+                update_resource_text::<Volume>.run_if(resource_changed::<Volume>)
             )
             .run_if(in_state(MenuState::SettingsSound)),
         )

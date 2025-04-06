@@ -1,5 +1,6 @@
 #![allow(clippy::type_complexity)]//Queries shouldnt trigger clippy they are clearer that way
 
+use std::fmt::Display;
 use crate::resources::Slidble;
 use std::marker::PhantomData;
 use bevy::prelude::*;
@@ -245,12 +246,12 @@ pub fn drag_slider_system<T: Resource + Slidble>(
 
 // Marker component for our text display
 #[derive(Component)]
-pub struct SliderValueText<R: Resource + Slidble>(pub PhantomData<R>);
+pub struct ReasourceText<R: Resource + Display>(pub PhantomData<R>);
 
 /// Creates a text entity that displays a Slidble resource's value
 /// 
 /// This function automatically handles the component setup and initial formatting
-pub fn create_slider_text<R: Resource + Slidble>(
+pub fn create_slider_text<R: Resource + Display>(
     commands: &mut ChildBuilder,
     resource: &Res<R>,
 ) -> Entity {
@@ -258,31 +259,21 @@ pub fn create_slider_text<R: Resource + Slidble>(
     // Spawn the entity with all required components
     commands
         .spawn((
-            SliderValueText::<R>(PhantomData),
-            Text::new(format!("{:.2}", resource.as_fraction() )),
+            ReasourceText::<R>(PhantomData),
+            Text::new(format!("{}", resource.as_ref())),
         ))
         .id()
 }
 
 // System to update the text when the resource changes
-pub fn update_slider_value_text<R: Resource + Slidble>(
-    mut text_query: Query<&mut Text, With<SliderValueText<R>>>,
+pub fn update_resource_text<R: Resource + Display>(
+    mut text_query: Query<&mut Text, With<ReasourceText<R>>>,
     resource: Res<R>,
 ) {
-
-    // println!("runing update logic");
-
-    // Only run if the resource has changed
-    if !resource.is_changed() {
-        return;
-    }
-    
-    // Get the current value as a fraction
-    let value = resource.as_fraction();
     
     // Update all text components associated with this resource
     for mut text in text_query.iter_mut() {
         // Format the value with 2 decimal places
-        text.0 = format!("{:.2}", value);
+        text.0 = format!("{}", resource.as_ref());
     }
 }
