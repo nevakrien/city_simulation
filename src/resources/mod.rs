@@ -30,6 +30,6 @@ impl Slidble for Volume {
 
 impl std::fmt::Display for Volume {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{:3}", self.0)
     }
 }

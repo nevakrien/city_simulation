@@ -269,11 +269,8 @@ pub fn create_slider_text<R: Resource + Display>(
 pub fn update_resource_text<R: Resource + Display>(
     mut text_query: Query<&mut Text, With<ReasourceText<R>>>,
     resource: Res<R>,
-) {
-    
-    // Update all text components associated with this resource
+) {    
     for mut text in text_query.iter_mut() {
-        // Format the value with 2 decimal places
         text.0 = format!("{}", resource.as_ref());
     }
 }
