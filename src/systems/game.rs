@@ -3,19 +3,35 @@ use bevy::{
     color::palettes::basic::{BLUE, LIME},
     prelude::*,
     reflect::TypePath,
-    render::render_resource::{AsBindGroup, ShaderRef},
+    // render::render_resource::{AsBindGroup, ShaderRef},
+    pbr::{MaterialPipeline, MaterialPipelineKey},
+    render::{
+        mesh::{MeshVertexAttribute, MeshVertexBufferLayoutRef},
+        render_resource::{
+            AsBindGroup, RenderPipelineDescriptor, ShaderRef, SpecializedMeshPipelineError,
+            VertexFormat,
+        },
+    },
 };
 
 use crate::globals::GameState;
 use crate::resources::{DisplayQuality, Volume};
 use crate::systems::despawn_screen;
 
-/// Path to the shader file in assets directory
-const SHADER_ASSET_PATH: &str = "shaders/animate_shader.wgsl";
+/// trying to run some intresting shaders
+const ANIMATE_SHADER_PATH: &str = "shaders/animate_shader.wgsl";
+const CUSTOM_SHADER_PATH: &str = "shaders/custom_vertex_attribute.wgsl";
+
+const ATTRIBUTE_BLEND_COLOR: MeshVertexAttribute =
+    MeshVertexAttribute::new("BlendColor", 988540917, VertexFormat::Float32x4);
 
 // This plugin will contain the game with an animated shader
 pub fn game_plugin(app: &mut App) {
-    app.add_plugins(MaterialPlugin::<CustomMaterial>::default())
+    app.add_plugins((
+        MaterialPlugin::<DumbyMatrial>::default(),
+        MaterialPlugin::<CustomMaterial>::default(),
+        ))
+
         .add_systems(OnEnter(GameState::Game), game_setup)
         .add_systems(Update, game.run_if(in_state(GameState::Game)))
         .add_systems(OnExit(GameState::Game), despawn_screen::<OnGameScreen>);
@@ -30,11 +46,11 @@ struct GameTimer(Timer);
 
 // Define the custom material for our shader
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
-struct CustomMaterial {}
+struct DumbyMatrial {}
 
-impl Material for CustomMaterial {
+impl Material for DumbyMatrial {
     fn fragment_shader() -> ShaderRef {
-        SHADER_ASSET_PATH.into()
+        ANIMATE_SHADER_PATH.into()
     }
 }
 
@@ -43,7 +59,8 @@ fn game_setup(
     display_quality: Res<DisplayQuality>,
     volume: Res<Volume>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<CustomMaterial>>,
+    mut dumby_materials: ResMut<Assets<DumbyMatrial>>,
+    mut custom_materials: ResMut<Assets<CustomMaterial>>,
 ) {
     // Setup the UI
     commands
@@ -125,15 +142,34 @@ fn game_setup(
     // Spawn the 3D cube with custom shader material
     commands.spawn((
         Mesh3d(meshes.add(Cuboid::default())),
-        MeshMaterial3d(materials.add(CustomMaterial {})),
+        MeshMaterial3d(dumby_materials.add(DumbyMatrial {})),
         Transform::from_xyz(1.0, 1.2, 0.4),
+        OnGameScreen, // Tag it so it gets despawned correctly
+    ));
+
+    //spawn custom shader cube
+    let mesh = Mesh::from(Cuboid::default())
+        // Sets the custom attribute
+        .with_inserted_attribute(
+            ATTRIBUTE_BLEND_COLOR,
+            // The cube mesh has 24 vertices (6 faces, 4 vertices per face), so we insert one BlendColor for each
+            vec![[1.0, 0.0, 0.0, 1.0]; 24],
+        );
+
+    // cube
+    commands.spawn((
+        Mesh3d(meshes.add(mesh)),
+        MeshMaterial3d(custom_materials.add(CustomMaterial {
+            color: LinearRgba::WHITE,
+        })),
+        Transform::from_xyz(-1.0, 1.2, 0.4),
         OnGameScreen, // Tag it so it gets despawned correctly
     ));
 
     // Add a camera to view the 3D scene
     commands.spawn((
         Camera{
-            order:-10,
+            order:10,
             ..default()
         },
         Camera3d::default(),
@@ -153,5 +189,37 @@ fn game(
 ) {
     if timer.tick(time.delta()).finished() {
         game_state.set(GameState::Menu);
+    }
+}
+
+// This is the struct that will be passed to your shader
+#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
+struct CustomMaterial {
+    #[uniform(0)]
+    color: LinearRgba,
+}
+
+
+
+impl Material for CustomMaterial {
+    fn vertex_shader() -> ShaderRef {
+        CUSTOM_SHADER_PATH.into()
+    }
+    fn fragment_shader() -> ShaderRef {
+        CUSTOM_SHADER_PATH.into()
+    }
+
+    fn specialize(
+        _pipeline: &MaterialPipeline<Self>,
+        descriptor: &mut RenderPipelineDescriptor,
+        layout: &MeshVertexBufferLayoutRef,
+        _key: MaterialPipelineKey<Self>,
+    ) -> Result<(), SpecializedMeshPipelineError> {
+        let vertex_layout = layout.0.get_layout(&[
+            Mesh::ATTRIBUTE_POSITION.at_shader_location(0),
+            ATTRIBUTE_BLEND_COLOR.at_shader_location(1),
+        ])?;
+        descriptor.vertex.buffers = vec![vertex_layout];
+        Ok(())
     }
 }
