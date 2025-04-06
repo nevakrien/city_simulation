@@ -16,7 +16,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         // Insert as resource the initial value for the settings resources
         .insert_resource(DisplayQuality::Medium)
-        .insert_resource(Volume(7))
+        .insert_resource(Volume(70))
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
         .add_systems(Startup, setup)
