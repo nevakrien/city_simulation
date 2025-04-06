@@ -22,11 +22,18 @@ fn main() {
         .init_state::<GameState>()
         .add_systems(Startup, setup)
         // Adds the plugins for each state
-        .add_plugins((splash::splash_plugin, menu::menu_plugin, game::GameOfLifeComputePlugin))
+        .add_plugins((splash::splash_plugin, menu::menu_plugin, game::game_plugin))
         .run();
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Camera2d);
+    commands.spawn(
+
+    (Camera{
+            order:0,
+            ..default()
+    },Camera2d
+    )
+    );
     // commands.spawn(Camera3d::default());
 }
