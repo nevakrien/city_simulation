@@ -120,12 +120,16 @@
 
 
 //copied from https://github.com/bevyengine/bevy/blob/main/examples/shader/compute_shader_game_of_life.rs
+//! A compute shader that simulates Conway's Game of Life.
+//!
+//! Compute shaders use the GPU for computing arbitrary information, that may be independent of what
+//! is rendered to the screen.
 
 use crate::GameState;
-use crate::systems::ui::despawn_screen;
 use bevy::{
     prelude::*,
     render::{
+        Extract,
         extract_resource::{ExtractResource, ExtractResourcePlugin},
         render_asset::{RenderAssetUsages, RenderAssets},
         render_graph::{self, RenderGraph, RenderLabel},
@@ -137,10 +141,6 @@ use bevy::{
 };
 use std::borrow::Cow;
 
-// Tag component used to tag entities added on the game screen
-#[derive(Component)]
-pub struct OnGameScreen;
-
 /// This example uses a shader source file from the assets subdirectory
 const SHADER_ASSET_PATH: &str = "shaders/game_of_life.wgsl";
 
@@ -148,33 +148,6 @@ const DISPLAY_FACTOR: u32 = 4;
 const SIZE: (u32, u32) = (1280 / DISPLAY_FACTOR, 720 / DISPLAY_FACTOR);
 const WORKGROUP_SIZE: u32 = 8;
 
-pub fn game_plugin(app:&mut App) {
-    app
-        .insert_resource(ClearColor(Color::BLACK))
-        .add_plugins((
-            // DefaultPlugins
-            //     .set(WindowPlugin {
-            //         primary_window: Some(Window {
-            //             resolution: (
-            //                 (SIZE.0 * DISPLAY_FACTOR) as f32,
-            //                 (SIZE.1 * DISPLAY_FACTOR) as f32,
-            //             )
-            //                 .into(),
-            //             // uncomment for unthrottled FPS
-            //             // present_mode: bevy::window::PresentMode::AutoNoVsync,
-            //             ..default()
-            //         }),
-            //         ..default()
-            //     })
-            //     .set(ImagePlugin::default_nearest()),
-            GameOfLifeComputePlugin,
-        ))
-        .add_systems(Update, switch_textures.run_if(in_state(GameState::Game)))
-        .add_systems(Startup, setup)
-        // .add_systems(Update, switch_textures)
-        ;
-        // .run();
-}
 
 fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     let mut image = Image::new_fill(
@@ -210,9 +183,6 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
 
 // Switch texture to display every frame to show the one that was written to most recently.
 fn switch_textures(images: Res<GameOfLifeImages>, mut sprite: Single<&mut Sprite>) {
-    
-    println!("runing texture switch");
-
     if sprite.image == images.texture_a {
         sprite.image = images.texture_b.clone_weak();
     } else {
@@ -220,50 +190,56 @@ fn switch_textures(images: Res<GameOfLifeImages>, mut sprite: Single<&mut Sprite
     }
 }
 
-struct GameOfLifeComputePlugin;
+pub struct GameOfLifeComputePlugin;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, RenderLabel)]
 struct GameOfLifeLabel;
 
 impl Plugin for GameOfLifeComputePlugin {
     fn build(&self, app: &mut App) {
+        app
+        .add_systems(Startup, setup)
+        .add_systems(Update, switch_textures.run_if(in_state(GameState::Game)))
+        ;
+
         // Extract the game of life image resource from the main world into the render world
         // for operation on by the compute shader and display on the sprite.
-        app.add_plugins(ExtractResourcePlugin::<GameOfLifeImages>::default())
-            
-        ;
+        app.add_plugins(ExtractResourcePlugin::<GameOfLifeImages>::default());
+
         let render_app = app.sub_app_mut(RenderApp);
-        render_app.add_systems(
+        render_app
+
+        .add_systems(
             Render,
-            prepare_bind_group
-                .run_if(in_state(GameState::Game))
-                .in_set(RenderSet::PrepareBindGroups),
+            prepare_bind_group.run_if(in_state(GameState::Game)).in_set(RenderSet::PrepareBindGroups),
         )
-        .add_systems(OnEnter(GameState::Game), setup_render_graph)
-        .add_systems(OnExit(GameState::Game), teardown_render_graph)
+        .add_systems(
+            OnEnter(GameState::Game),
+            |mut render_graph : ResMut<RenderGraph>| {
+                println!("runing enter");
+                render_graph.add_node(GameOfLifeLabel, GameOfLifeNode::default());
+            }
+        )
+        .add_systems(
+            OnExit(GameState::Game),
+            |mut render_graph : ResMut<RenderGraph>| {
+                println!("runing exit");
+                render_graph.remove_node(GameOfLifeLabel).unwrap();
+            }
+        )
+
+        // .add_plugins(Extract::<GameState>::default())
+
         ;
 
         // let mut render_graph = render_app.world_mut().resource_mut::<RenderGraph>();
         // render_graph.add_node(GameOfLifeLabel, GameOfLifeNode::default());
-        // render_graph.add_node_edge(GameOfLifeLabel, bevy::render::graph::CameraDriverLabel);
     }
 
     fn finish(&self, app: &mut App) {
         let render_app = app.sub_app_mut(RenderApp);
         render_app.init_resource::<GameOfLifePipeline>();
     }
-}
-
-// System to add nodes to the render graph when entering game state
-fn setup_render_graph(mut render_graph: ResMut<RenderGraph>) {
-    render_graph.add_node(GameOfLifeLabel, GameOfLifeNode::default());
-    render_graph.add_node_edge(GameOfLifeLabel, bevy::render::graph::CameraDriverLabel);
-}
-
-// System to remove nodes from the render graph when exiting game state
-fn teardown_render_graph(mut render_graph: ResMut<RenderGraph>) {
-    render_graph.remove_node(GameOfLifeLabel).unwrap();
-
 }
 
 #[derive(Resource, Clone, ExtractResource)]
