@@ -17,55 +17,60 @@ use crate::menus::ui::{
         COLOR_WHITE, NORMAL_BUTTON, SelectedOption, TEXT_COLOR,
     };
 
-// This plugin manages the menu, with 5 different screens:
-// - a main menu with "New Game", "Settings", "Quit"
-// - a settings menu with two submenus and a back button
-// - two settings screen with a setting that can be set and a back button
+// State used for the current menu screen
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+pub enum SettingsState {
+    Settings,
+    Display,
+    Sound,
+    #[default]
+    Disabled,
+}
+
+
 pub fn settings_sub_plugin(app: &mut App) {
     app
-        // At start, the menu is not enabled. This will be changed in `menu_setup` when
-        // entering the `GameState::Menu` state.
-        // Current screen in the menu is handled by an independent state from `GameState`
-        .add_systems(OnEnter(MenuState::Settings), settings_menu_setup)
+        .init_state::<SettingsState>() 
+
+        .add_systems(OnEnter(SettingsState::Settings), settings_menu_setup)
         .add_systems(
-            OnExit(MenuState::Settings),
+            OnExit(SettingsState::Settings),
             despawn_screen::<OnSettingsMenuScreen>,
         )
-        // Systems to handle the display settings screen
         .add_systems(
-            OnEnter(MenuState::SettingsDisplay),
+            OnEnter(SettingsState::Display),
             display_settings_menu_setup,
         )
         .add_systems(
             Update,
-            (setting_button::<DisplayQuality>.run_if(in_state(MenuState::SettingsDisplay)),),
+            setting_button::<DisplayQuality>.run_if(in_state(SettingsState::Display)),
         )
         .add_systems(
-            OnExit(MenuState::SettingsDisplay),
+            OnExit(SettingsState::Display),
             (
                 despawn_screen::<OnDisplaySettingsMenuScreen>,
-                save_setting_system::<DisplayQuality>
+                save_setting_system::<DisplayQuality>,
             ),
         )
-        // Systems to handle the sound settings screen
-        .add_systems(OnEnter(MenuState::SettingsSound), sound_settings_menu_setup)
+        .add_systems(
+            OnEnter(SettingsState::Sound),
+            sound_settings_menu_setup,
+        )
         .add_systems(
             Update,
-            (   
+            (
                 drag_slider_system::<Volume>,
                 update_resource_text::<Volume>.run_if(resource_changed::<Volume>)
             )
-            .run_if(in_state(MenuState::SettingsSound)),
+            .run_if(in_state(SettingsState::Sound)),
         )
         .add_systems(
-            OnExit(MenuState::SettingsSound),
+            OnExit(SettingsState::Sound),
             (
                 despawn_screen::<OnSoundSettingsMenuScreen>,
-                save_setting_system::<Volume>
-
-            )
-        )
-        ;
+                save_setting_system::<Volume>,
+            ),
+        );
 }
 
 // Tag component used to tag entities added on the settings menu screen

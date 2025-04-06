@@ -1,3 +1,4 @@
+use crate::menus::settings::SettingsState;
 use crate::menus::settings::settings_sub_plugin;
 use bevy::{app::AppExit, color::palettes::css::CRIMSON, prelude::*};
 
@@ -35,16 +36,26 @@ pub fn menu_plugin(app: &mut App) {
         );
 }
 
+// // State used for the current menu screen
+// #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+// pub enum MenuState {
+//     Main,
+//     Settings,
+//     SettingsDisplay,
+//     SettingsSound,
+//     #[default]
+//     Disabled,
+// }
+
 // State used for the current menu screen
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
 pub enum MenuState {
     Main,
     Settings,
-    SettingsDisplay,
-    SettingsSound,
     #[default]
     Disabled,
 }
+
 
 // Tag component used to tag entities added on the main menu screen
 #[derive(Component,Clone,Copy)]
@@ -273,6 +284,7 @@ fn menu_action(
     >,
     mut app_exit_events: EventWriter<AppExit>,
     mut menu_state: ResMut<NextState<MenuState>>,
+    mut settings_state: ResMut<NextState<SettingsState>>,
     mut game_state: ResMut<NextState<GameState>>,
 ) {
     for (interaction, menu_button_action) in &interaction_query {
@@ -284,17 +296,24 @@ fn menu_action(
                 MenuButtonAction::Play => {
                     game_state.set(GameState::Game);
                     menu_state.set(MenuState::Disabled);
+                    settings_state.set(SettingsState::Disabled);
                 }
-                MenuButtonAction::Settings => menu_state.set(MenuState::Settings),
+                MenuButtonAction::Settings => {
+                    menu_state.set(MenuState::Settings);
+                    settings_state.set(SettingsState::Settings);
+                }
                 MenuButtonAction::SettingsDisplay => {
-                    menu_state.set(MenuState::SettingsDisplay);
+                    settings_state.set(SettingsState::Display);
                 }
                 MenuButtonAction::SettingsSound => {
-                    menu_state.set(MenuState::SettingsSound);
+                    settings_state.set(SettingsState::Sound);
                 }
-                MenuButtonAction::BackToMainMenu => menu_state.set(MenuState::Main),
+                MenuButtonAction::BackToMainMenu => {
+                    menu_state.set(MenuState::Main);
+                    settings_state.set(SettingsState::Disabled);
+                }
                 MenuButtonAction::BackToSettings => {
-                    menu_state.set(MenuState::Settings);
+                    settings_state.set(SettingsState::Settings);
                 }
             }
         }
