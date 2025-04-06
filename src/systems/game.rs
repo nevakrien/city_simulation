@@ -19,8 +19,8 @@ use crate::resources::{DisplayQuality, Volume};
 use crate::systems::despawn_screen;
 
 /// trying to run some intresting shaders
-const ANIMATE_SHADER_PATH: &str = "shaders/animate_shader.wgsl";
-const CUSTOM_SHADER_PATH: &str = "shaders/custom_vertex_attribute.wgsl";
+const ANIMATE_SHADER_PATH: &str = "bevy_examples/shaders/animate_shader.wgsl";
+const CUSTOM_SHADER_PATH: &str = "bevy_examples/shaders/custom_vertex_attribute.wgsl";
 
 const ATTRIBUTE_BLEND_COLOR: MeshVertexAttribute =
     MeshVertexAttribute::new("BlendColor", 988540917, VertexFormat::Float32x4);
