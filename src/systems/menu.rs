@@ -1,24 +1,15 @@
-use crate::systems::ui::create_slider_text;
-use crate::resources::Slidble;
-use crate::systems::ui::SliderValueText;
-use std::marker::PhantomData;
-use crate::systems::ui::update_slider_value_text;
-use crate::systems::ui::drag_slider_system;
-use crate::systems::ui::COLOR_WHITE;
-use crate::systems::ui::COLOR_RED;
-use crate::systems::ui::COLOR_MAROON;
-use crate::systems::ui::COLOR_GRAY;
-use crate::systems::ui::spawn_slider_system;
-use crate::systems::ui::TEXT_COLOR;
-use crate::systems::ui::SelectedOption;
-use crate::systems::ui::NORMAL_BUTTON;
-use crate::systems::ui::button_system;
-use crate::systems::ui::setting_button;
 use bevy::{app::AppExit, color::palettes::css::CRIMSON, prelude::*};
 
-use crate::globals::{GameState};
+use crate::globals::GameState;
 use crate::resources::{DisplayQuality, Volume};
-use crate::systems::despawn_screen;
+use crate::systems::{
+    despawn_screen,
+    ui::{
+        button_system, create_slider_text, drag_slider_system, setting_button,
+        spawn_slider_system, update_slider_value_text, COLOR_GRAY, COLOR_MAROON, COLOR_RED,
+        COLOR_WHITE, NORMAL_BUTTON, SelectedOption, TEXT_COLOR,
+    },
+};
 
 // This plugin manages the menu, with 5 different screens:
 // - a main menu with "New Game", "Settings", "Quit"
@@ -57,7 +48,11 @@ pub fn menu_plugin(app: &mut App) {
         .add_systems(OnEnter(MenuState::SettingsSound), sound_settings_menu_setup)
         .add_systems(
             Update,
-            (drag_slider_system::<Volume>,update_slider_value_text::<Volume>.run_if(resource_changed::<Volume>)).run_if(in_state(MenuState::SettingsSound)),
+            (   
+                drag_slider_system::<Volume>,
+                update_slider_value_text::<Volume>.run_if(resource_changed::<Volume>)
+            )
+            .run_if(in_state(MenuState::SettingsSound)),
         )
         .add_systems(
             OnExit(MenuState::SettingsSound),
@@ -596,6 +591,7 @@ fn sound_settings_menu_setup(
 //         });
 // }
 
+#[allow(clippy::type_complexity)]
 fn menu_action(
     interaction_query: Query<
         (&Interaction, &MenuButtonAction),

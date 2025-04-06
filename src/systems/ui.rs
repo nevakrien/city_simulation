@@ -1,14 +1,15 @@
+#![allow(clippy::type_complexity)]//Queries shouldnt trigger clippy they are clearer that way
+
 use crate::resources::Slidble;
 use std::marker::PhantomData;
 use bevy::prelude::*;
-
 
 //colors
 
 pub const COLOR_GRAY: Color = Color::srgb(0.5, 0.5, 0.5);
 pub const COLOR_RED: Color = Color::srgb(1.0, 0.0, 0.0);
 pub const COLOR_MAROON: Color = Color::srgb(0.5, 0.0, 0.0);
-pub const COLOR_CRIMSON: Color = Color::srgb(0.86, 0.08, 0.24);
+// pub const COLOR_CRIMSON: Color = Color::srgb(0.86, 0.08, 0.24);
 pub const COLOR_WHITE: Color = Color::srgb(1.0, 1.0, 1.0);
 
 // Define UI color constants
@@ -22,6 +23,7 @@ pub const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
 
 
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
+#[allow(dead_code)/*its not dead*/]
 pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
     for entity in &to_despawn {
         // commands.entity(entity).despawn_recursive();
