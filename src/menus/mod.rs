@@ -1,5 +1,6 @@
 pub mod splash;
 pub mod menu;
+pub mod settings;
 // pub mod game;
 // pub mod common;
 pub mod ui;

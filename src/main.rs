@@ -2,6 +2,8 @@
 //! change some settings or quit. There is no actual game, it will just display the current
 //! settings for 5 seconds before going back to the menu.
 
+use std::path::Path;
+use city_simulation::settings_io::SettingPlugin;
 use bevy::prelude::*;
 
 
@@ -17,8 +19,17 @@ fn main() {
         .add_plugins(DefaultPlugins)
         
         // Insert as resource the initial value for the settings resources
-        .insert_resource(DisplayQuality::Medium)
-        .insert_resource(Volume(70))
+        
+
+        .add_plugins((
+            SettingPlugin::new(Path::new("assets/settings/volume.json"),Volume(70)),
+            SettingPlugin::new(Path::new("assets/settings/quality.json"),DisplayQuality::Medium),
+
+        ))
+        // .insert_resource(DisplayQuality::Medium)
+        // .insert_resource(Volume(70))
+
+
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
         .add_systems(Startup, setup)

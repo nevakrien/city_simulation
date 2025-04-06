@@ -1,3 +1,5 @@
+use serde::Deserialize;
+use serde::Serialize;
 use bevy::prelude::*;
 
 // Enum that will be used as a global state for the game
@@ -9,22 +11,23 @@ pub enum GameState {
     Game,
 }
 
-
-// One of the two settings that can be set through the menu. It will be a resource in the app
-#[derive(Resource, Debug, Component, PartialEq, Eq, Clone, Copy)]
-pub enum DisplayQuality {
-    Low,
-    Medium,
-    High,
-}
-
 pub trait Slidble{
     fn as_fraction(&self) -> f32;
     fn from_fraction(fraction: f32) -> Self;
 }
 
 // One of the two settings that can be set through the menu. It will be a resource in the app
-#[derive(Resource, Debug, Component, PartialEq, Clone, Copy)]
+#[derive(Resource,Component,Serialize,Deserialize, Debug, PartialEq, Eq, Clone, Copy)]
+pub enum DisplayQuality {
+    Low,
+    Medium,
+    High,
+}
+
+
+
+// One of the two settings that can be set through the menu. It will be a resource in the app
+#[derive(Resource,Component,Serialize,Deserialize, Debug, PartialEq, Clone, Copy)]
 pub struct Volume(pub u32);
 
 
