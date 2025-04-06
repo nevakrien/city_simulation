@@ -1,3 +1,8 @@
+use crate::systems::ui::create_slider_text;
+use crate::resources::Slidble;
+use crate::systems::ui::SliderValueText;
+use std::marker::PhantomData;
+use crate::systems::ui::update_slider_value_text;
 use crate::systems::ui::drag_slider_system;
 use crate::systems::ui::COLOR_WHITE;
 use crate::systems::ui::COLOR_RED;
@@ -52,7 +57,7 @@ pub fn menu_plugin(app: &mut App) {
         .add_systems(OnEnter(MenuState::SettingsSound), sound_settings_menu_setup)
         .add_systems(
             Update,
-            drag_slider_system::<Volume>.run_if(in_state(MenuState::SettingsSound)),
+            (drag_slider_system::<Volume>,update_slider_value_text::<Volume>.run_if(resource_changed::<Volume>)).run_if(in_state(MenuState::SettingsSound)),
         )
         .add_systems(
             OnExit(MenuState::SettingsSound),
@@ -435,6 +440,11 @@ fn sound_settings_menu_setup(
                             
                             // parent.spawn((Text::new("Volume"), button_text_style.clone()));
                             parent.spawn((Text::new("Volume:"), button_text_style.clone()));
+                            create_slider_text(parent,&volume);
+                            // parent.spawn((
+                            //     SliderValueText::<Volume>(PhantomData),
+                            //     Text::new(format!("{:.2}", volume.as_fraction())),
+                            //     button_text_style.clone()));
 
                                 
                             volume_container=Some(

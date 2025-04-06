@@ -24,7 +24,8 @@ pub const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
     for entity in &to_despawn {
-        commands.entity(entity).despawn_recursive();
+        // commands.entity(entity).despawn_recursive();
+        commands.entity(entity).despawn();
     }
 }
 
@@ -237,65 +238,49 @@ pub fn drag_slider_system<T: Resource + Slidble>(
         }
     }
 }
-// pub fn drag_slider_system<T: Resource + Slidble>(
-//     // Get the mouse position
-//     windows: Query<&Window>,
-//     // Query the bar entities with interaction 
-//     mut bar_query: Query<(&Interaction, &GlobalTransform, &Node, &mut Slider<T>), Without<SliderHandle<T>>>,
-//     // Query for handle entities
-//     mut handle_query: Query<&mut Node, With<SliderHandle<T>>>,
-//     // The resource we're updating
-//     mut setting: ResMut<T>,
-// ) {
-//     // Get the window for mouse position
-//     let window = windows.get_single().expect("There should be exactly one window");
+
+
+
+// Marker component for our text display
+#[derive(Component)]
+pub struct SliderValueText<R: Resource + Slidble>(pub PhantomData<R>);
+
+/// Creates a text entity that displays a Slidble resource's value
+/// 
+/// This function automatically handles the component setup and initial formatting
+pub fn create_slider_text<R: Resource + Slidble>(
+    commands: &mut ChildBuilder,
+    resource: &Res<R>,
+) -> Entity {
+
+    // Spawn the entity with all required components
+    commands
+        .spawn((
+            SliderValueText::<R>(PhantomData),
+            Text::new(format!("{:.2}", resource.as_fraction() )),
+        ))
+        .id()
+}
+
+// System to update the text when the resource changes
+pub fn update_slider_value_text<R: Resource + Slidble>(
+    mut text_query: Query<&mut Text, With<SliderValueText<R>>>,
+    resource: Res<R>,
+) {
+
+    // println!("runing update logic");
+
+    // Only run if the resource has changed
+    if !resource.is_changed() {
+        return;
+    }
     
-//     // Only proceed if we have the cursor position
-//     if let Some(cursor_position) = window.cursor_position() {
-//         // Check each bar
-//         for (interaction, global_transform, bar_node, mut slider) in &mut bar_query {
-//             // Only process if the bar is being clicked/dragged
-//             if *interaction == Interaction::Pressed {
-//                 // Get the bar width
-//                 let bar_width = match bar_node.width {
-//                     Val::Px(px) => px,
-//                     _ => 200.0,
-//                 };
-                
-//                 // Calculate the bar's global position
-//                 let bar_position = global_transform.translation().truncate();
-                
-//                 // Get bar's left edge position in global space
-//                 let bar_left = bar_position.x - bar_width / 2.0;
-                
-//                 // Calculate relative x position within the bar
-//                 let relative_x = cursor_position.x - bar_left;
-                
-//                 // Clamp to bar bounds and calculate fraction
-//                 let clamped_x = relative_x.clamp(0.0, bar_width);
-//                 let fraction = clamped_x / bar_width;
-                
-//                 // Store the fraction in the slider component
-//                 slider.fraction = fraction;
-                
-//                 // Convert fraction to resource value 
-//                 *setting = T::from_fraction(fraction);
-                
-//                 // Update handle position
-//                 if let Ok(mut handle_node) = handle_query.get_mut(slider.handle) {
-//                     let handle_width = match handle_node.width {
-//                         Val::Px(px) => px,
-//                         _ => 20.0,
-//                     };
-                    
-//                     // Calculate max left position (bar width - handle width)
-//                     let max_left = bar_width - handle_width;
-//                     let left_offset = fraction * max_left;
-                    
-//                     // Update handle position
-//                     handle_node.left = Val::Px(left_offset);
-//                 }
-//             }
-//         }
-//     }
-// }
+    // Get the current value as a fraction
+    let value = resource.as_fraction();
+    
+    // Update all text components associated with this resource
+    for mut text in text_query.iter_mut() {
+        // Format the value with 2 decimal places
+        text.0 = format!("{:.2}", value);
+    }
+}
