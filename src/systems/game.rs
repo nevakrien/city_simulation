@@ -125,11 +125,13 @@
 //! Compute shaders use the GPU for computing arbitrary information, that may be independent of what
 //! is rendered to the screen.
 
+use crate::globals::RenderState;
 use crate::GameState;
+
 use bevy::{
+    state::app::StatesPlugin,
     prelude::*,
     render::{
-        Extract,
         extract_resource::{ExtractResource, ExtractResourcePlugin},
         render_asset::{RenderAssetUsages, RenderAssets},
         render_graph::{self, RenderGraph, RenderLabel},
@@ -200,35 +202,46 @@ impl Plugin for GameOfLifeComputePlugin {
         app
         .add_systems(Startup, setup)
         .add_systems(Update, switch_textures.run_if(in_state(GameState::Game)))
+
+        .add_systems(OnEnter(GameState::Game),|mut r:ResMut<RenderState>| {*r=RenderState::GameOfLife})
+        .add_systems(OnExit(GameState::Game),|mut r:ResMut<RenderState>| {*r=RenderState::Off})
         ;
 
         // Extract the game of life image resource from the main world into the render world
         // for operation on by the compute shader and display on the sprite.
-        app.add_plugins(ExtractResourcePlugin::<GameOfLifeImages>::default());
+        app.add_plugins(ExtractResourcePlugin::<GameOfLifeImages>::default())
+        .add_plugins(ExtractResourcePlugin::<RenderState>::default())
+
+        ;
 
         let render_app = app.sub_app_mut(RenderApp);
         render_app
 
+        .add_plugins(StatesPlugin)
+        .init_state::<RenderState>()
         .add_systems(
-            Render,
-            prepare_bind_group.run_if(in_state(GameState::Game)).in_set(RenderSet::PrepareBindGroups),
+            Update,
+            |command:Res<RenderState>,mut state:ResMut<NextState<RenderState>>| {state.set(*command)}
         )
         .add_systems(
-            OnEnter(GameState::Game),
+            Render,
+            prepare_bind_group.run_if(in_state(RenderState::GameOfLife)).in_set(RenderSet::PrepareBindGroups),
+        )
+        .add_systems(
+            OnEnter(RenderState::GameOfLife),
             |mut render_graph : ResMut<RenderGraph>| {
                 println!("runing enter");
                 render_graph.add_node(GameOfLifeLabel, GameOfLifeNode::default());
             }
         )
         .add_systems(
-            OnExit(GameState::Game),
+            OnExit(RenderState::GameOfLife),
             |mut render_graph : ResMut<RenderGraph>| {
                 println!("runing exit");
                 render_graph.remove_node(GameOfLifeLabel).unwrap();
             }
         )
 
-        // .add_plugins(Extract::<GameState>::default())
 
         ;
 

@@ -2,6 +2,7 @@
 //! change some settings or quit. There is no actual game, it will just display the current
 //! settings for 5 seconds before going back to the menu.
 
+use crate::globals::RenderState;
 use bevy::prelude::*;
 use globals::GameState;
 use resources::{DisplayQuality, Volume};
@@ -20,6 +21,8 @@ fn main() {
         .insert_resource(Volume(70))
         // Declare the game state, whose starting value is determined by the `Default` trait
         .init_state::<GameState>()
+        .init_resource::<RenderState>()
+        
         .add_systems(Startup, setup)
         // Adds the plugins for each state
         .add_plugins((splash::splash_plugin, menu::menu_plugin, game::GameOfLifeComputePlugin))
