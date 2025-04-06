@@ -27,4 +27,5 @@ fn main() {
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
+    // commands.spawn(Camera3d::default());
 }

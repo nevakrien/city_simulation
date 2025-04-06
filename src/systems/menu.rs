@@ -1,3 +1,9 @@
+use crate::systems::ui::drag_slider_system;
+use crate::systems::ui::COLOR_WHITE;
+use crate::systems::ui::COLOR_RED;
+use crate::systems::ui::COLOR_MAROON;
+use crate::systems::ui::COLOR_GRAY;
+use crate::systems::ui::spawn_slider_system;
 use crate::systems::ui::TEXT_COLOR;
 use crate::systems::ui::SelectedOption;
 use crate::systems::ui::NORMAL_BUTTON;
@@ -46,7 +52,7 @@ pub fn menu_plugin(app: &mut App) {
         .add_systems(OnEnter(MenuState::SettingsSound), sound_settings_menu_setup)
         .add_systems(
             Update,
-            setting_button::<Volume>.run_if(in_state(MenuState::SettingsSound)),
+            drag_slider_system::<Volume>.run_if(in_state(MenuState::SettingsSound)),
         )
         .add_systems(
             OnExit(MenuState::SettingsSound),
@@ -71,24 +77,24 @@ pub enum MenuState {
 }
 
 // Tag component used to tag entities added on the main menu screen
-#[derive(Component)]
+#[derive(Component,Clone,Copy)]
 pub struct OnMainMenuScreen;
 
 // Tag component used to tag entities added on the settings menu screen
-#[derive(Component)]
+#[derive(Component,Clone,Copy)]
 pub struct OnSettingsMenuScreen;
 
 // Tag component used to tag entities added on the display settings menu screen
-#[derive(Component)]
+#[derive(Component,Clone,Copy)]
 pub struct OnDisplaySettingsMenuScreen;
 
 // Tag component used to tag entities added on the sound settings menu screen
-#[derive(Component)]
+#[derive(Component,Clone,Copy)]
 pub struct OnSoundSettingsMenuScreen;
 
 
 // All actions that can be triggered from a button click
-#[derive(Component)]
+#[derive(Component,Clone,Copy)]
 pub enum MenuButtonAction {
     Play,
     Settings,
@@ -375,7 +381,10 @@ fn display_settings_menu_setup(mut commands: Commands, display_quality: Res<Disp
         });
 }
 
-fn sound_settings_menu_setup(mut commands: Commands, volume: Res<Volume>) {
+fn sound_settings_menu_setup(
+    mut commands: Commands,
+    volume: Res<Volume>,
+) {
     let button_node = Node {
         width: Val::Px(200.0),
         height: Val::Px(65.0),
@@ -385,12 +394,12 @@ fn sound_settings_menu_setup(mut commands: Commands, volume: Res<Volume>) {
         ..default()
     };
     let button_text_style = (
-        TextFont {
-            font_size: 33.0,
-            ..default()
-        },
-        TextColor(TEXT_COLOR),
+        TextFont { font_size: 33.0, ..default() },
+        TextColor(COLOR_WHITE),
     );
+
+    // 1) UI layout for the “Volume Menu” background, text, etc.
+    let mut volume_container = None;
 
     commands
         .spawn((
@@ -411,7 +420,7 @@ fn sound_settings_menu_setup(mut commands: Commands, volume: Res<Volume>) {
                         align_items: AlignItems::Center,
                         ..default()
                     },
-                    BackgroundColor(CRIMSON.into()),
+                    BackgroundColor(COLOR_RED), // or CRIMSON, etc.
                 ))
                 .with_children(|parent| {
                     parent
@@ -420,10 +429,27 @@ fn sound_settings_menu_setup(mut commands: Commands, volume: Res<Volume>) {
                                 align_items: AlignItems::Center,
                                 ..default()
                             },
-                            BackgroundColor(CRIMSON.into()),
+                            BackgroundColor(COLOR_MAROON),
                         ))
                         .with_children(|parent| {
-                            parent.spawn((Text::new("Volume"), button_text_style.clone()));
+                            
+                            // parent.spawn((Text::new("Volume"), button_text_style.clone()));
+                            parent.spawn((Text::new("Volume:"), button_text_style.clone()));
+
+                                
+                            volume_container=Some(
+                                parent.spawn((
+                                    Node {
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                ))
+                                .id()
+                            );
+
+                            // (Optional) If you want to keep the old volume loop for buttons,
+                            // you can keep it. If not, remove it.
+                            /*
                             for volume_setting in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] {
                                 let mut entity = parent.spawn((
                                     Button,
@@ -439,18 +465,126 @@ fn sound_settings_menu_setup(mut commands: Commands, volume: Res<Volume>) {
                                     entity.insert(SelectedOption);
                                 }
                             }
+                            */
                         });
+
+                    // "Back" button
                     parent
                         .spawn((
                             Button,
                             button_node,
-                            BackgroundColor(NORMAL_BUTTON),
+                            BackgroundColor(COLOR_GRAY),
                             MenuButtonAction::BackToSettings,
                         ))
                         .with_child((Text::new("Back"), button_text_style));
                 });
         });
+
+    // 2) Spawn the slider with proper positioning
+    //    We map [0..1] → Volume(0..10).
+    //    Get node reference to the volume parent container
+    spawn_slider_system::<Volume, OnSoundSettingsMenuScreen>(
+        commands,
+        Node {
+            width: Val::Px(250.0),
+            height: Val::Px(20.0),
+            // Center slider and add proper margins
+            margin: UiRect::all(Val::Px(20.0)),
+            align_self: AlignSelf::Center,
+            ..default()
+        },
+        Some(Node {
+            width: Val::Px(20.0),
+            height: Val::Px(30.0),
+            position_type: PositionType::Absolute,
+            left: Val::Px(0.0),
+            top: Val::Px(-5.0),
+            ..default()
+        }),
+        OnSoundSettingsMenuScreen,
+        Some(volume_container.unwrap()),
+        Some(volume)
+    );
 }
+
+
+
+// fn sound_settings_menu_setup(mut commands: Commands, volume: Res<Volume>) {
+//     let button_node = Node {
+//         width: Val::Px(200.0),
+//         height: Val::Px(65.0),
+//         margin: UiRect::all(Val::Px(20.0)),
+//         justify_content: JustifyContent::Center,
+//         align_items: AlignItems::Center,
+//         ..default()
+//     };
+//     let button_text_style = (
+//         TextFont {
+//             font_size: 33.0,
+//             ..default()
+//         },
+//         TextColor(TEXT_COLOR),
+//     );
+
+//     commands
+//         .spawn((
+//             Node {
+//                 width: Val::Percent(100.0),
+//                 height: Val::Percent(100.0),
+//                 align_items: AlignItems::Center,
+//                 justify_content: JustifyContent::Center,
+//                 ..default()
+//             },
+//             OnSoundSettingsMenuScreen,
+//         ))
+//         .with_children(|parent| {
+//             parent
+//                 .spawn((
+//                     Node {
+//                         flex_direction: FlexDirection::Column,
+//                         align_items: AlignItems::Center,
+//                         ..default()
+//                     },
+//                     BackgroundColor(CRIMSON.into()),
+//                 ))
+//                 .with_children(|parent| {
+//                     parent
+//                         .spawn((
+//                             Node {
+//                                 align_items: AlignItems::Center,
+//                                 ..default()
+//                             },
+//                             BackgroundColor(CRIMSON.into()),
+//                         ))
+//                         .with_children(|parent| {
+//                             parent.spawn((Text::new("Volume"), button_text_style.clone()));
+//                             for volume_setting in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] {
+//                                 let mut entity = parent.spawn((
+//                                     Button,
+//                                     Node {
+//                                         width: Val::Px(30.0),
+//                                         height: Val::Px(65.0),
+//                                         ..button_node.clone()
+//                                     },
+//                                     BackgroundColor(NORMAL_BUTTON),
+//                                     Volume(volume_setting),
+//                                 ));
+//                                 if *volume == Volume(volume_setting) {
+//                                     entity.insert(SelectedOption);
+//                                 }
+//                             }
+//                         });
+//                     parent
+//                         .spawn((
+//                             Button,
+//                             button_node,
+//                             BackgroundColor(NORMAL_BUTTON),
+//                             MenuButtonAction::BackToSettings,
+//                         ))
+//                         .with_child((Text::new("Back"), button_text_style));
+//                 });
+//         });
+// }
 
 fn menu_action(
     interaction_query: Query<
