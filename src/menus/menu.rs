@@ -1,3 +1,4 @@
+use crate::menus::ui::BasicButton;
 use crate::game::PlayState;
 use crate::menus::settings::SettingsState;
 use crate::menus::settings::settings_sub_plugin;
@@ -136,6 +137,7 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                     // - quit
                     parent
                         .spawn((
+                            BasicButton,
                             Button,
                             button_node.clone(),
                             BackgroundColor(NORMAL_BUTTON),
@@ -152,6 +154,7 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                         });
                     parent
                         .spawn((
+                            BasicButton,
                             Button,
                             button_node.clone(),
                             BackgroundColor(NORMAL_BUTTON),
@@ -168,6 +171,7 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                         });
                     parent
                         .spawn((
+                            BasicButton,
                             Button,
                             button_node,
                             BackgroundColor(NORMAL_BUTTON),
@@ -186,86 +190,6 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         });
 }
 
-
-
-
-
-// fn sound_settings_menu_setup(mut commands: Commands, volume: Res<Volume>) {
-//     let button_node = Node {
-//         width: Val::Px(200.0),
-//         height: Val::Px(65.0),
-//         margin: UiRect::all(Val::Px(20.0)),
-//         justify_content: JustifyContent::Center,
-//         align_items: AlignItems::Center,
-//         ..default()
-//     };
-//     let button_text_style = (
-//         TextFont {
-//             font_size: 33.0,
-//             ..default()
-//         },
-//         TextColor(TEXT_COLOR),
-//     );
-
-//     commands
-//         .spawn((
-//             Node {
-//                 width: Val::Percent(100.0),
-//                 height: Val::Percent(100.0),
-//                 align_items: AlignItems::Center,
-//                 justify_content: JustifyContent::Center,
-//                 ..default()
-//             },
-//             OnSoundSettingsMenuScreen,
-//         ))
-//         .with_children(|parent| {
-//             parent
-//                 .spawn((
-//                     Node {
-//                         flex_direction: FlexDirection::Column,
-//                         align_items: AlignItems::Center,
-//                         ..default()
-//                     },
-//                     BackgroundColor(CRIMSON.into()),
-//                 ))
-//                 .with_children(|parent| {
-//                     parent
-//                         .spawn((
-//                             Node {
-//                                 align_items: AlignItems::Center,
-//                                 ..default()
-//                             },
-//                             BackgroundColor(CRIMSON.into()),
-//                         ))
-//                         .with_children(|parent| {
-//                             parent.spawn((Text::new("Volume"), button_text_style.clone()));
-//                             for volume_setting in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] {
-//                                 let mut entity = parent.spawn((
-//                                     Button,
-//                                     Node {
-//                                         width: Val::Px(30.0),
-//                                         height: Val::Px(65.0),
-//                                         ..button_node.clone()
-//                                     },
-//                                     BackgroundColor(NORMAL_BUTTON),
-//                                     Volume(volume_setting),
-//                                 ));
-//                                 if *volume == Volume(volume_setting) {
-//                                     entity.insert(SelectedOption);
-//                                 }
-//                             }
-//                         });
-//                     parent
-//                         .spawn((
-//                             Button,
-//                             button_node,
-//                             BackgroundColor(NORMAL_BUTTON),
-//                             MenuButtonAction::BackToSettings,
-//                         ))
-//                         .with_child((Text::new("Back"), button_text_style));
-//                 });
-//         });
-// }
 
 // All actions that can be triggered from a button click
 #[derive(Component,Clone,Copy)]
@@ -320,7 +244,9 @@ fn menu_action(
                     settings_state.set(SettingsState::Sound);
                 }
                 MenuButtonAction::BackToMainMenu => {
+                    game_state.set(GameState::Menu);
                     menu_state.set(MenuState::Main);
+                    play_state.set(PlayState::Disabled);
                     settings_state.set(SettingsState::Disabled);
                 }
                 MenuButtonAction::BackToSettings => {
