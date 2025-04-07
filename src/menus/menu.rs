@@ -1,14 +1,16 @@
-use crate::menus::ui::BasicButton;
-use crate::game::PlayState;
-use crate::menus::settings::SettingsState;
-use crate::menus::settings::settings_sub_plugin;
-use bevy::{app::AppExit, color::palettes::css::CRIMSON, prelude::*};
+use bevy::{
+    app::AppExit, 
+    color::palettes::css::CRIMSON, 
+    prelude::*
+};
 
-use crate::globals::GameState;
-use crate::menus::{
-    despawn_screen,
-    ui::{
-        button_system, NORMAL_BUTTON, TEXT_COLOR,
+use crate::{
+    game::PlayState,
+    globals::GameState,
+    menus::{
+        despawn_screen,
+        settings::{SettingsState, settings_sub_plugin},
+        ui::{BasicButton, button_system, NORMAL_BUTTON, TEXT_COLOR},
     },
 };
 

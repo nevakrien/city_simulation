@@ -1,9 +1,9 @@
 #![allow(clippy::type_complexity)]//Queries shouldnt trigger clippy they are clearer that way
 
-use std::fmt::Display;
-use crate::globals::Slidble;
-use std::marker::PhantomData;
+use std::{fmt::Display, marker::PhantomData};
 use bevy::prelude::*;
+
+use crate::globals::Slidble;
 
 //colors
 
@@ -255,7 +255,7 @@ pub struct ReasourceText<R: Resource + Display>(pub PhantomData<R>);
 /// Creates a text entity that displays a Slidble resource's value
 /// 
 /// This function automatically handles the component setup and initial formatting
-pub fn create_slider_text<R: Resource + Display>(
+pub fn create_setting_text<R: Resource + Display>(
     commands: &mut ChildBuilder,
     resource: &Res<R>,
 ) -> Entity {

@@ -1,22 +1,23 @@
-use crate::menus::settings::SettingsState;
-use crate::menus::ui::TEXT_COLOR;
+use crate::menus::ui::create_setting_text;
 use bevy::{
-    color::palettes::basic::{BLUE, LIME},
     prelude::*,
-    reflect::TypePath,
-    // render::render_resource::{AsBindGroup, ShaderRef},
-    pbr::{MaterialPipeline, MaterialPipelineKey},
-    render::{
-        mesh::{MeshVertexAttribute, MeshVertexBufferLayoutRef},
-        render_resource::{
-            AsBindGroup, RenderPipelineDescriptor, ShaderRef, SpecializedMeshPipelineError,
-            VertexFormat,
-        },
+    input::{
+        ButtonInput,
+        keyboard::KeyCode,
+    },
+    color::palettes::basic::{BLUE, LIME},
+};
+
+use crate::{
+    common::despawn_screen,
+    globals::{GameState, DisplayQuality, Volume},
+    graphics::{ATTRIBUTE_BLEND_COLOR, CustomMaterial, DumbyMatrial},
+    menus::{
+        settings::SettingsState,
+        ui::TEXT_COLOR,
     },
 };
 
-use crate::globals::{GameState,DisplayQuality, Volume};
-use crate::common::despawn_screen;
 
 // State used for the current menu screen
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -29,11 +30,7 @@ pub enum PlayState {
 
 
 /// trying to run some intresting shaders
-const ANIMATE_SHADER_PATH: &str = "bevy_examples/shaders/animate_shader.wgsl";
-const CUSTOM_SHADER_PATH: &str = "bevy_examples/shaders/custom_vertex_attribute.wgsl";
 
-const ATTRIBUTE_BLEND_COLOR: MeshVertexAttribute =
-    MeshVertexAttribute::new("BlendColor", 988540917, VertexFormat::Float32x4);
 
 // This plugin will contain the game with an animated shader
 pub fn game_plugin(app: &mut App) {
@@ -58,15 +55,7 @@ pub struct OnGameScreen;
 #[derive(Resource, Deref, DerefMut)]
 struct GameTimer(Timer);
 
-// Define the custom material for our shader
-#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
-struct DumbyMatrial {}
 
-impl Material for DumbyMatrial {
-    fn fragment_shader() -> ShaderRef {
-        ANIMATE_SHADER_PATH.into()
-    }
-}
 
 fn game_setup(
     mut commands: Commands,
@@ -79,83 +68,6 @@ fn game_setup(
     mut next_play_state: ResMut<NextState<PlayState>>,
 ) {
     next_play_state.set(PlayState::Play);
-
-    // Setup the UI
-    commands
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                // center children
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                ..default()
-            },
-            OnGameScreen,
-        ))
-        .with_children(|parent| {
-            // First create a `Node` for centering what we want to display
-            parent
-                .spawn((
-                    Node {
-                        // This will display its children in a column, from top to bottom
-                        flex_direction: FlexDirection::Column,
-                        // `align_items` will align children on the cross axis. Here the main axis is
-                        // vertical (column), so the cross axis is horizontal. This will center the
-                        // children
-                        align_items: AlignItems::Center,
-                        ..default()
-                    },
-                    BackgroundColor(Color::BLACK),
-                ))
-                .with_children(|p| {
-                    p.spawn((
-                        Text::new("Will be back to the menu shortly..."),
-                        TextFont {
-                            font_size: 67.0,
-                            ..default()
-                        },
-                        TextColor(TEXT_COLOR),
-                        Node {
-                            margin: UiRect::all(Val::Px(50.0)),
-                            ..default()
-                        },
-                    ));
-                    p.spawn((
-                        Text::default(),
-                        Node {
-                            margin: UiRect::all(Val::Px(50.0)),
-                            ..default()
-                        },
-                    ))
-                    .with_children(|p| {
-                        p.spawn((
-                            TextSpan(format!("quality: {:?}", *display_quality)),
-                            TextFont {
-                                font_size: 50.0,
-                                ..default()
-                            },
-                            TextColor(BLUE.into()),
-                        ));
-                        p.spawn((
-                            TextSpan::new(" - "),
-                            TextFont {
-                                font_size: 50.0,
-                                ..default()
-                            },
-                            TextColor(TEXT_COLOR),
-                        ));
-                        p.spawn((
-                            TextSpan(format!("volume: {:?}", *volume)),
-                            TextFont {
-                                font_size: 50.0,
-                                ..default()
-                            },
-                            TextColor(LIME.into()),
-                        ));
-                    });
-                });
-        });
 
     // Spawn the 3D cube with custom shader material
     commands.spawn((
@@ -212,8 +124,6 @@ fn game(
     }
 }
 
-use bevy::input::ButtonInput;
-use bevy::input::keyboard::KeyCode;
 
 fn toggle_settings_with_escape(
     keys: Res<ButtonInput<KeyCode>>,
@@ -238,34 +148,3 @@ fn toggle_settings_with_escape(
 }
 
 
-// This is the struct that will be passed to your shader
-#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
-struct CustomMaterial {
-    #[uniform(0)]
-    color: LinearRgba,
-}
-
-
-
-impl Material for CustomMaterial {
-    fn vertex_shader() -> ShaderRef {
-        CUSTOM_SHADER_PATH.into()
-    }
-    fn fragment_shader() -> ShaderRef {
-        CUSTOM_SHADER_PATH.into()
-    }
-
-    fn specialize(
-        _pipeline: &MaterialPipeline<Self>,
-        descriptor: &mut RenderPipelineDescriptor,
-        layout: &MeshVertexBufferLayoutRef,
-        _key: MaterialPipelineKey<Self>,
-    ) -> Result<(), SpecializedMeshPipelineError> {
-        let vertex_layout = layout.0.get_layout(&[
-            Mesh::ATTRIBUTE_POSITION.at_shader_location(0),
-            ATTRIBUTE_BLEND_COLOR.at_shader_location(1),
-        ])?;
-        descriptor.vertex.buffers = vec![vertex_layout];
-        Ok(())
-    }
-}

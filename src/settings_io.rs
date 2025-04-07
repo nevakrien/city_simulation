@@ -1,8 +1,6 @@
+use std::{fs, marker::PhantomData, path::Path};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::marker::PhantomData;
-use std::path::Path;
 
 /// Plugin for handling settings persistence
 pub struct SettingPlugin<T: 'static + Resource + Serialize + for<'de> Deserialize<'de> + Clone> {

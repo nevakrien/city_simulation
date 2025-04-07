@@ -2,21 +2,34 @@
 //! change some settings or quit. There is no actual game, it will just display the current
 //! settings for 5 seconds before going back to the menu.
 
+use iyes_perf_ui::PerfUiPlugin;
+use iyes_perf_ui::entries::PerfUiAllEntries;
 use std::path::Path;
-use city_simulation::settings_io::SettingPlugin;
-use bevy::prelude::*;
+use bevy::{
+    prelude::*,
+    diagnostic::{LogDiagnosticsPlugin,FrameTimeDiagnosticsPlugin}
+};
 
-
-use city_simulation::globals::GameState;
-use city_simulation::game;
-use city_simulation::globals::{DisplayQuality, Volume};
-use city_simulation::menus::{menu, splash};
+use city_simulation::{
+    game,
+    globals::{GameState, DisplayQuality, Volume},
+    menus::{menu, splash},
+    settings_io::SettingPlugin,
+    framerate::{FrameratePluginWithPath}
+};
 
 
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins((
+            DefaultPlugins,
+            FrameTimeDiagnosticsPlugin::default(),
+            FrameratePluginWithPath::default(),
+            PerfUiPlugin,
+            
+            // LogDiagnosticsPlugin::default(),
+        ))
         
         // Insert as resource the initial value for the settings resources
         
@@ -47,5 +60,11 @@ fn setup(mut commands: Commands) {
     },Camera2d
     )
     );
+
+    // commands.spawn((
+    //     PerfUiEntryFPS::default(),
+    //     PerfUiEntryClock::default(),
+    // ));
+    commands.spawn(PerfUiAllEntries::default());
     // commands.spawn(Camera3d::default());
 }

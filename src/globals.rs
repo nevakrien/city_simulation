@@ -1,13 +1,14 @@
-use serde::Deserialize;
-use serde::Serialize;
 use bevy::prelude::*;
+
+use serde::{Deserialize, Serialize};
 
 // Enum that will be used as a global state for the game
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States,Resource)]
 pub enum GameState {
-    #[default]
+    // #[default]
     Splash,
     Menu,
+    #[default]
     Game,
 }
 

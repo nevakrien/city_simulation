@@ -1,22 +1,23 @@
+use crate::framerate::FramerateLimiter;
+use crate::framerate::save_framerate_config_system;
+use bevy::{
+    color::palettes::css::CRIMSON, 
+    prelude::*
+};
 
-// use crate::globals::GameState;
-// use crate::menus::ui::button_system;
-use crate::menus::ui::BasicButton;
-use crate::globals::GameState;
-use crate::settings_io::save_setting_system;
-use crate::menus::ui::update_resource_text;
-use crate::menus::ui::drag_slider_system;
-use crate::menus::ui::setting_button;
-use crate::menus::despawn_screen;
-use crate::menus::menu::MenuButtonAction;
-use bevy::{color::palettes::css::CRIMSON, prelude::*};
-
-use crate::globals::{DisplayQuality, Volume};
-use crate::menus::ui::{
-        create_slider_text,
-        spawn_slider_system, COLOR_GRAY, COLOR_MAROON, COLOR_RED,
-        COLOR_WHITE, NORMAL_BUTTON, SelectedOption, TEXT_COLOR,
-    };
+use crate::{
+    globals::{GameState, DisplayQuality, Volume},
+    menus::{
+        despawn_screen,
+        menu::MenuButtonAction,
+        ui::{
+            BasicButton, COLOR_GRAY, COLOR_MAROON, COLOR_RED, COLOR_WHITE, NORMAL_BUTTON,
+            SelectedOption, TEXT_COLOR, create_setting_text, drag_slider_system,
+            setting_button, spawn_slider_system, update_resource_text,
+        },
+    },
+    settings_io::save_setting_system,
+};
 
 // State used for the current menu screen
 #[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
@@ -51,6 +52,7 @@ pub fn settings_sub_plugin(app: &mut App) {
             (
                 despawn_screen::<OnDisplaySettingsMenuScreen>,
                 save_setting_system::<DisplayQuality>,
+                save_framerate_config_system,
             ),
         )
         .add_systems(
@@ -287,6 +289,7 @@ fn display_settings_menu_setup(mut commands: Commands, display_quality: Res<Disp
         });
 }
 
+
 fn sound_settings_menu_setup(
     mut commands: Commands,
     volume: Res<Volume>,
@@ -341,7 +344,7 @@ fn sound_settings_menu_setup(
                             
                             // parent.spawn((Text::new("Volume"), button_text_style.clone()));
                             parent.spawn((Text::new("Volume:"), button_text_style.clone()));
-                            create_slider_text(parent,&volume);
+                            create_setting_text(parent,&volume);
                             // parent.spawn((
                             //     SliderValueText::<Volume>(PhantomData),
                             //     Text::new(format!("{:.2}", volume.as_fraction())),
