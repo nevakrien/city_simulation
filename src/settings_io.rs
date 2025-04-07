@@ -59,7 +59,7 @@ where
     let path = path.path;
     
     if path.exists() {
-        match fs::read_to_string(&path) {
+        match fs::read_to_string(path) {
             Ok(contents) => {
                 match serde_json::from_str::<T>(&contents) {
                     Ok(loaded_settings) => {
@@ -87,14 +87,14 @@ where
 
 /// Save settings to file
 pub fn save_setting<T: Resource + Serialize>(world: &mut World) -> Result<(), String> {
-    if let (Some(settings), Some(path)) = (
+    if let (Some(settings), Some(path_holder)) = (
         world.get_resource::<T>(),
         world.get_resource::<SettingsPath<T>>(),
     ) {
-        let path_buf = path.path;
+        let path = path_holder.path;
         
         // Ensure parent directory exists
-        if let Some(parent) = path_buf.parent() {
+        if let Some(parent) = path.parent() {
             if !parent.exists() {
                 if let Err(e) = fs::create_dir_all(parent) {
                     return Err(format!("Failed to create settings directory: {}", e));
@@ -104,13 +104,13 @@ pub fn save_setting<T: Resource + Serialize>(world: &mut World) -> Result<(), St
         
         match serde_json::to_string_pretty(settings) {
             Ok(json) => {
-                match fs::write(&path_buf, json) {
+                match fs::write(path, json) {
                     Ok(_) => {
-                        debug!("Settings saved to {}", path_buf.display());
+                        debug!("Settings saved to {}", path.display());
                         Ok(())
                     }
                     Err(e) => {
-                        error!("Failed to write settings to {}: {}", path_buf.display(), e);
+                        error!("Failed to write settings to {}: {}", path.display(), e);
                         Err(format!("Failed to write settings: {}", e))
                     }
                 }
