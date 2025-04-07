@@ -227,7 +227,7 @@ fn camera_control_system(
 
     let delta = time.delta_secs();
     let move_speed = 5.0;
-    let rot_speed = std::f32::consts::PI; // radians per sec
+    let rot_speed = 0.7*std::f32::consts::PI; // radians per sec
 
     let is_translation_mode = !keys.pressed(KeyCode::AltLeft);
 
@@ -266,7 +266,7 @@ fn camera_control_system(
         direction += z * forward;
 
         if direction.length_squared() > 0.0 {
-            transform.translation += direction.normalize() * move_speed * delta;
+            transform.translation += direction/*.normalize()*/ * move_speed * delta;
         }
     } else {
         // rotate in local space
@@ -274,7 +274,7 @@ fn camera_control_system(
 
         // flip signs to match "natural" FPS-style camera feel
         if x != 0.0 {
-            transform.rotate_y(-x * rot_speed * delta); // yaw (horizontal)
+            transform.rotate_local_y(-x * rot_speed * delta); // yaw (horizontal)
         }
         if z != 0.0 {
             transform.rotate_local_x(z * rot_speed * delta); // pitch (look up/down)
