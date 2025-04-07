@@ -10,7 +10,7 @@ use crate::{
     menus::{
         despawn_screen,
         settings::{SettingsState, settings_sub_plugin},
-        ui::{BasicButton, button_system, NORMAL_BUTTON, TEXT_COLOR},
+        ui::{SettingButton, button_system, NORMAL_BUTTON, TEXT_COLOR},
     },
 };
 
@@ -139,7 +139,7 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                     // - quit
                     parent
                         .spawn((
-                            BasicButton,
+                            SettingButton,
                             Button,
                             button_node.clone(),
                             BackgroundColor(NORMAL_BUTTON),
@@ -156,7 +156,7 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                         });
                     parent
                         .spawn((
-                            BasicButton,
+                            SettingButton,
                             Button,
                             button_node.clone(),
                             BackgroundColor(NORMAL_BUTTON),
@@ -173,7 +173,7 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                         });
                     parent
                         .spawn((
-                            BasicButton,
+                            SettingButton,
                             Button,
                             button_node,
                             BackgroundColor(NORMAL_BUTTON),

@@ -36,7 +36,7 @@ pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut comm
 
 // Tag component to enable the basic button system
 #[derive(Component)]
-pub struct BasicButton;
+pub struct SettingButton;
 
 // Tag component used to mark which setting is currently selected
 #[derive(Component)]
@@ -46,7 +46,7 @@ pub struct SelectedOption;
 pub fn button_system(
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor, Option<&SelectedOption>),
-        (Changed<Interaction>, With<BasicButton>),>,
+        (Changed<Interaction>, With<SettingButton>),>,
 ) {
     for (interaction, mut background_color, selected) in &mut interaction_query {
         *background_color = match (*interaction, selected) {
@@ -61,8 +61,8 @@ pub fn button_system(
 // This system updates the settings when a new value for a setting is selected, and marks
 // the button as the one currently selected
 pub fn setting_button<T: Resource + Component + PartialEq + Copy>(
-    interaction_query: Query<(&Interaction, &T, Entity), (Changed<Interaction>, With<BasicButton>)>,
-    selected_query: Single<(Entity, &mut BackgroundColor), With<SelectedOption>>,
+    interaction_query: Query<(&Interaction, &T, Entity), (Changed<Interaction>, With<SettingButton>)>,
+    selected_query: Single<(Entity, &mut BackgroundColor), (With<T>,With<SelectedOption>)>,
     mut commands: Commands,
     mut setting: ResMut<T>,
 ) {

@@ -11,7 +11,7 @@ use crate::{
         despawn_screen,
         menu::MenuButtonAction,
         ui::{
-            BasicButton, COLOR_GRAY, COLOR_MAROON, COLOR_RED, COLOR_WHITE, NORMAL_BUTTON,
+            SettingButton, COLOR_GRAY, COLOR_MAROON, COLOR_RED, COLOR_WHITE, NORMAL_BUTTON,
             SelectedOption, TEXT_COLOR, create_setting_text, drag_slider_system,
             setting_button, spawn_slider_system, update_resource_text,
         },
@@ -137,7 +137,7 @@ fn settings_menu_setup(
                     if *game_state.get() == GameState::Game {
                         parent
                             .spawn((
-                                BasicButton,
+                                SettingButton,
                                 Button,
                                 button_node.clone(),
                                 BackgroundColor(NORMAL_BUTTON),
@@ -158,7 +158,7 @@ fn settings_menu_setup(
                     ] {
                         parent
                             .spawn((
-                                BasicButton,
+                                SettingButton,
                                 Button,
                                 button_node.clone(),
                                 BackgroundColor(NORMAL_BUTTON),
@@ -177,7 +177,7 @@ fn settings_menu_setup(
 
                     parent
                         .spawn((
-                            BasicButton,
+                            SettingButton,
                             Button,
                             button_node.clone(),
                             BackgroundColor(NORMAL_BUTTON),
@@ -253,7 +253,7 @@ fn settings_menu_setup(
 //                                 DisplayQuality::High,
 //                             ] {
 //                                 let mut entity = parent.spawn((
-//                                     BasicButton,
+//                                     SettingButton,
 //                                     Button,
 //                                     Node {
 //                                         width: Val::Px(150.0),
@@ -278,7 +278,7 @@ fn settings_menu_setup(
 //                     parent
 //                         .spawn((
 //                             Button,
-//                             BasicButton,
+//                             SettingButton,
 //                             button_node,
 //                             BackgroundColor(NORMAL_BUTTON),
 //                             MenuButtonAction::BackToSettings,
@@ -355,7 +355,7 @@ fn display_settings_menu_setup(
                                 DisplayQuality::High,
                             ] {
                                 let mut entity = parent.spawn((
-                                    BasicButton,
+                                    SettingButton,
                                     Button,
                                     Node {
                                         width: Val::Px(150.0),
@@ -395,7 +395,7 @@ fn display_settings_menu_setup(
                                 FramerateMode::Off,
                             ] {
                                 let mut entity = parent.spawn((
-                                    BasicButton,
+                                    SettingButton,
                                     Button,
                                     Node {
                                         width: Val::Px(140.0),
@@ -442,7 +442,7 @@ fn display_settings_menu_setup(
                     parent
                         .spawn((
                             Button,
-                            BasicButton,
+                            SettingButton,
                             button_node,
                             BackgroundColor(NORMAL_BUTTON),
                             MenuButtonAction::BackToSettings,
@@ -555,7 +555,7 @@ fn sound_settings_menu_setup(
                     parent
                         .spawn((
                             Button,
-                            BasicButton,
+                            SettingButton,
                             button_node,
                             BackgroundColor(COLOR_GRAY),
                             MenuButtonAction::BackToSettings,
