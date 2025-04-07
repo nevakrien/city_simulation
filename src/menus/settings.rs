@@ -1,12 +1,12 @@
 
 // use crate::globals::GameState;
 // use crate::menus::ui::button_system;
+use crate::globals::GameState;
 use crate::settings_io::save_setting_system;
 use crate::menus::ui::update_resource_text;
 use crate::menus::ui::drag_slider_system;
 use crate::menus::ui::setting_button;
 use crate::menus::despawn_screen;
-use crate::menus::menu::MenuState;
 use crate::menus::menu::MenuButtonAction;
 use bevy::{color::palettes::css::CRIMSON, prelude::*};
 
@@ -85,7 +85,70 @@ struct OnDisplaySettingsMenuScreen;
 #[derive(Component,Clone,Copy)]
 struct OnSoundSettingsMenuScreen;
 
-fn settings_menu_setup(mut commands: Commands) {
+// fn settings_menu_setup(mut commands: Commands) {
+//     let button_node = Node {
+//         width: Val::Px(200.0),
+//         height: Val::Px(65.0),
+//         margin: UiRect::all(Val::Px(20.0)),
+//         justify_content: JustifyContent::Center,
+//         align_items: AlignItems::Center,
+//         ..default()
+//     };
+
+//     let button_text_style = (
+//         TextFont {
+//             font_size: 33.0,
+//             ..default()
+//         },
+//         TextColor(TEXT_COLOR),
+//     );
+
+//     commands
+//         .spawn((
+//             Node {
+//                 width: Val::Percent(100.0),
+//                 height: Val::Percent(100.0),
+//                 align_items: AlignItems::Center,
+//                 justify_content: JustifyContent::Center,
+//                 ..default()
+//             },
+//             OnSettingsMenuScreen,
+//         ))
+//         .with_children(|parent| {
+//             parent
+//                 .spawn((
+//                     Node {
+//                         flex_direction: FlexDirection::Column,
+//                         align_items: AlignItems::Center,
+//                         ..default()
+//                     },
+//                     BackgroundColor(CRIMSON.into()),
+//                 ))
+//                 .with_children(|parent| {
+//                     for (action, text) in [
+//                         (MenuButtonAction::SettingsDisplay, "Display"),
+//                         (MenuButtonAction::SettingsSound, "Sound"),
+//                         (MenuButtonAction::BackToMainMenu, "Main Menu"),
+//                     ] {
+//                         parent
+//                             .spawn((
+//                                 Button,
+//                                 button_node.clone(),
+//                                 BackgroundColor(NORMAL_BUTTON),
+//                                 action,
+//                             ))
+//                             .with_children(|parent| {
+//                                 parent.spawn((Text::new(text), button_text_style.clone()));
+//                             });
+//                     }
+//                 });
+//         });
+// }
+
+fn settings_menu_setup(
+    mut commands: Commands,
+    game_state: Res<State<GameState>>,
+) {
     let button_node = Node {
         width: Val::Px(200.0),
         height: Val::Px(65.0),
@@ -125,10 +188,27 @@ fn settings_menu_setup(mut commands: Commands) {
                     BackgroundColor(CRIMSON.into()),
                 ))
                 .with_children(|parent| {
+                    // --- TOP: Add Resume if in Game ---
+                    if *game_state.get() == GameState::Game {
+                        parent
+                            .spawn((
+                                Button,
+                                button_node.clone(),
+                                BackgroundColor(NORMAL_BUTTON),
+                                MenuButtonAction::ResumePlay,
+                            ))
+                            .with_children(|parent| {
+                                parent.spawn((
+                                    Text::new("Resume"),
+                                    button_text_style.clone(),
+                                ));
+                            });
+                    }
+
+                    // --- MIDDLE: Display and Sound ---
                     for (action, text) in [
                         (MenuButtonAction::SettingsDisplay, "Display"),
                         (MenuButtonAction::SettingsSound, "Sound"),
-                        (MenuButtonAction::BackToMainMenu, "Back"),
                     ] {
                         parent
                             .spawn((
@@ -141,9 +221,27 @@ fn settings_menu_setup(mut commands: Commands) {
                                 parent.spawn((Text::new(text), button_text_style.clone()));
                             });
                     }
+
+                    // --- BOTTOM: Back or Main Menu depending on context ---
+                    let (action, label) = match game_state.get() {
+                        GameState::Menu => (MenuButtonAction::BackToMainMenu, "Back"),
+                        _ => (MenuButtonAction::BackToMainMenu, "Main Menu"),
+                    };
+
+                    parent
+                        .spawn((
+                            Button,
+                            button_node.clone(),
+                            BackgroundColor(NORMAL_BUTTON),
+                            action,
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn((Text::new(label), button_text_style.clone()));
+                        });
                 });
         });
 }
+
 
 fn display_settings_menu_setup(mut commands: Commands, display_quality: Res<DisplayQuality>) {
     let button_node = Node {

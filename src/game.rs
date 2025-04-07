@@ -1,3 +1,4 @@
+use crate::menus::settings::SettingsState;
 use crate::menus::ui::TEXT_COLOR;
 use bevy::{
     color::palettes::basic::{BLUE, LIME},
@@ -17,6 +18,16 @@ use bevy::{
 use crate::globals::{GameState,DisplayQuality, Volume};
 use crate::common::despawn_screen;
 
+// State used for the current menu screen
+#[derive(Clone, Copy, Default, Eq, PartialEq, Debug, Hash, States)]
+pub enum PlayState {
+    Settings,
+    Play,
+    #[default]
+    Disabled,
+}
+
+
 /// trying to run some intresting shaders
 const ANIMATE_SHADER_PATH: &str = "bevy_examples/shaders/animate_shader.wgsl";
 const CUSTOM_SHADER_PATH: &str = "bevy_examples/shaders/custom_vertex_attribute.wgsl";
@@ -31,8 +42,12 @@ pub fn game_plugin(app: &mut App) {
         MaterialPlugin::<CustomMaterial>::default(),
         ))
 
+        .init_state::<PlayState>() 
+
+
         .add_systems(OnEnter(GameState::Game), game_setup)
-        .add_systems(Update, game.run_if(in_state(GameState::Game)))
+        .add_systems(Update, game.run_if(in_state(PlayState::Play)))
+        .add_systems(Update, toggle_settings_with_escape.run_if(in_state(GameState::Game)))
         .add_systems(OnExit(GameState::Game), despawn_screen::<OnGameScreen>);
 }
 
@@ -60,7 +75,11 @@ fn game_setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut dumby_materials: ResMut<Assets<DumbyMatrial>>,
     mut custom_materials: ResMut<Assets<CustomMaterial>>,
+
+    mut next_play_state: ResMut<NextState<PlayState>>,
 ) {
+    next_play_state.set(PlayState::Play);
+
     // Setup the UI
     commands
         .spawn((
@@ -184,12 +203,40 @@ fn game_setup(
 fn game(
     time: Res<Time>,
     mut game_state: ResMut<NextState<GameState>>,
+    mut play_state: ResMut<NextState<PlayState>>,
     mut timer: ResMut<GameTimer>,
 ) {
     if timer.tick(time.delta()).finished() {
         game_state.set(GameState::Menu);
+        play_state.set(PlayState::Disabled);
     }
 }
+
+use bevy::input::ButtonInput;
+use bevy::input::keyboard::KeyCode;
+
+fn toggle_settings_with_escape(
+    keys: Res<ButtonInput<KeyCode>>,
+    play_state: Res<State<PlayState>>,
+    settings_state: Res<State<SettingsState>>,
+    mut next_play_state: ResMut<NextState<PlayState>>,
+    mut next_settings_state: ResMut<NextState<SettingsState>>,
+) {
+    if keys.just_pressed(KeyCode::Escape) {
+        match (play_state.get(), settings_state.get()) {
+            (PlayState::Play, SettingsState::Disabled) => {
+                next_play_state.set(PlayState::Settings);
+                next_settings_state.set(SettingsState::Settings);
+            }
+            (PlayState::Settings, SettingsState::Settings) => {
+                next_settings_state.set(SettingsState::Disabled);
+                next_play_state.set(PlayState::Play);
+            }
+            _ => {}
+        }
+    }
+}
+
 
 // This is the struct that will be passed to your shader
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]

@@ -1,3 +1,4 @@
+use crate::game::PlayState;
 use crate::menus::settings::SettingsState;
 use crate::menus::settings::settings_sub_plugin;
 use bevy::{app::AppExit, color::palettes::css::CRIMSON, prelude::*};
@@ -32,7 +33,7 @@ pub fn menu_plugin(app: &mut App) {
         // Common systems to all screens that handles buttons behavior
         .add_systems(
             Update,
-            (menu_action, button_system).run_if(in_state(GameState::Menu)),
+            (menu_action, button_system)//.run_if(in_state(GameState::Menu)),
         );
 }
 
@@ -64,17 +65,7 @@ pub struct OnMainMenuScreen;
 
 
 
-// All actions that can be triggered from a button click
-#[derive(Component,Clone,Copy)]
-pub enum MenuButtonAction {
-    Play,
-    Settings,
-    SettingsDisplay,
-    SettingsSound,
-    BackToMainMenu,
-    BackToSettings,
-    Quit,
-}
+
 
 fn menu_setup(mut menu_state: ResMut<NextState<MenuState>>) {
     menu_state.set(MenuState::Main);
@@ -276,6 +267,19 @@ fn main_menu_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 //         });
 // }
 
+// All actions that can be triggered from a button click
+#[derive(Component,Clone,Copy)]
+pub enum MenuButtonAction {
+    Play,
+    ResumePlay,
+    Settings,
+    SettingsDisplay,
+    SettingsSound,
+    BackToMainMenu,
+    BackToSettings,
+    Quit,
+}
+
 #[allow(clippy::type_complexity)]
 fn menu_action(
     interaction_query: Query<
@@ -286,6 +290,7 @@ fn menu_action(
     mut menu_state: ResMut<NextState<MenuState>>,
     mut settings_state: ResMut<NextState<SettingsState>>,
     mut game_state: ResMut<NextState<GameState>>,
+    mut play_state: ResMut<NextState<PlayState>>,
 ) {
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
@@ -298,6 +303,12 @@ fn menu_action(
                     menu_state.set(MenuState::Disabled);
                     settings_state.set(SettingsState::Disabled);
                 }
+                
+                MenuButtonAction::ResumePlay => {
+                    settings_state.set(SettingsState::Disabled);
+                    play_state.set(PlayState::Play);
+                }
+
                 MenuButtonAction::Settings => {
                     menu_state.set(MenuState::Settings);
                     settings_state.set(SettingsState::Settings);
@@ -314,7 +325,7 @@ fn menu_action(
                 }
                 MenuButtonAction::BackToSettings => {
                     settings_state.set(SettingsState::Settings);
-                }
+                },
             }
         }
     }
