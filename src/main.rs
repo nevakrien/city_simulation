@@ -15,7 +15,7 @@ use city_simulation::{
     globals::{GameState, DisplayQuality, Volume},
     menus::{menu, splash},
     settings_io::SettingPlugin,
-    framerate::{FrameratePluginWithPath}
+    framerate::{framerate_plugin}
 };
 
 
@@ -25,7 +25,6 @@ fn main() {
         .add_plugins((
             DefaultPlugins,
             FrameTimeDiagnosticsPlugin::default(),
-            FrameratePluginWithPath::default(),
             PerfUiPlugin,
             
             // LogDiagnosticsPlugin::default(),
@@ -34,7 +33,8 @@ fn main() {
         // Insert as resource the initial value for the settings resources
         
 
-        .add_plugins((
+        .add_plugins((            
+            framerate_plugin,
             SettingPlugin::new(Path::new("assets/settings/volume.json"),Volume(70)),
             SettingPlugin::new(Path::new("assets/settings/quality.json"),DisplayQuality::Medium),
 

@@ -1,147 +1,75 @@
-use std::{fs, path::Path, time::Duration};
+use std::fmt;
+use crate::settings_io::load_settings_system;
+use crate::settings_io::SettingPlugin;
+use crate::globals::Slidble;
+use std::{path::Path, time::Duration};
 
 use bevy::prelude::*;
-use bevy_framepace::{FramepacePlugin,debug::DiagnosticsPlugin, FramepaceSettings, Limiter};
+use bevy_framepace::{FramepacePlugin, FramepaceSettings, Limiter};
 use serde::{Deserialize, Serialize};
 
-/// Serializable version of the frame limiter setting
-#[derive(Resource, Debug, Clone,PartialEq, Serialize, Deserialize)]
-pub enum FramerateLimiter {
+
+#[derive(Resource,Component,Default, Debug, Clone,Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum FramerateMode {
+    #[default]
     Auto,
-    Manual(f64), // FPS
+    Manual,
     Off,
 }
 
-impl Default for FramerateLimiter {
+//only use for manual framerate mode
+#[derive(Resource,Component, Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+pub struct ManualFpsCap(pub f64);
+
+
+impl Default for ManualFpsCap {
     fn default() -> Self {
-        Self::Auto
+        ManualFpsCap(60.0)
     }
 }
 
-/// Converts from your config type to the actual limiter
-impl From<&FramerateLimiter> for Limiter {
-    fn from(value: &FramerateLimiter) -> Self {
-        match value {
-            FramerateLimiter::Auto => Limiter::Auto,
-            FramerateLimiter::Manual(fps) => {
-                Limiter::Manual(Duration::from_secs_f64(1.0 / fps.max(1e-6)))
-            }
-            FramerateLimiter::Off => Limiter::Off,
-        }
+impl Slidble for ManualFpsCap{
+    fn as_fraction(&self) -> f32{
+        (self.0/200.0) as f32
+    }
+    fn from_fraction(fraction: f32) -> Self{
+        ManualFpsCap(200.0 as f64*fraction as f64)
     }
 }
 
-/// Converts from `FramepaceSettings` back to your config
-impl From<&Limiter> for FramerateLimiter {
-    fn from(limiter: &Limiter) -> Self {
-        match limiter {
-            Limiter::Auto => FramerateLimiter::Auto,
-            Limiter::Manual(duration) => {
-                let secs = duration.as_secs_f64();
-                if secs > 0.0 {
-                    FramerateLimiter::Manual(1.0 / secs)
-                } else {
-                    FramerateLimiter::Manual(240.0)
-                }
-            }
-            Limiter::Off => FramerateLimiter::Off,
-        }
+impl fmt::Display for ManualFpsCap {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:.0} FPS", self.0)
     }
 }
 
-/// Internal resource to track where the config is stored
-#[derive(Resource)]
-struct FramerateConfigPath(&'static Path);
+pub fn framerate_plugin(app: &mut App) {
+    let fps_plugin = SettingPlugin::new(Path::new("assets/settings/fps_cap_slider.json"),ManualFpsCap(60.0)); 
+    let mode_plugin = SettingPlugin::new(Path::new("assets/settings/fps_cap_mode.json"),FramerateMode::default()); 
 
-/// Plugin for framerate limiter config loading and application
-pub struct FrameratePluginWithPath {
-    pub config_path: &'static Path,
-    pub default: FramerateLimiter,
-}
-impl Default for FrameratePluginWithPath {
-    fn default() -> Self {
-        Self {
-            config_path: Path::new("config/framerate.json"),
-            default: FramerateLimiter::Manual(60.0),
-        }
-    }
-}
-
-
-impl Plugin for FrameratePluginWithPath {
-    fn build(&self, app: &mut App) {
-        app.add_plugins((FramepacePlugin,/*DiagnosticsPlugin*/))
-            .insert_resource(self.default.clone())
-            .insert_resource(FramerateConfigPath(self.config_path))
-            .add_systems(Startup, (
-                load_framerate_config,
-                apply_framerate_config.run_if(resource_changed::<FramerateLimiter>),
-            ));
-    }
+    app.add_plugins((FramepacePlugin,/*DiagnosticsPlugin,*/fps_plugin,mode_plugin))
+        .add_systems(Startup, 
+            set_framerate
+                .after(load_settings_system::<FramerateMode>)
+                .after(load_settings_system::<ManualFpsCap>))
+        .add_systems(Update, 
+            set_framerate.run_if(
+                resource_changed::<FramerateMode>
+                .or(resource_changed::<ManualFpsCap>)
+        ))
+    ;
 }
 
-/// Loads config from disk (if present)
-fn load_framerate_config(
-    mut config: ResMut<FramerateLimiter>,
-    path: Res<FramerateConfigPath>,
-) {
-    let path = path.0;
-    if path.exists() {
-        match fs::read_to_string(path) {
-            Ok(contents) => match serde_json::from_str::<FramerateLimiter>(&contents) {
-                Ok(loaded) => {
-                    *config = loaded;
-                    info!("Framerate config loaded from {}", path.display());
-                }
-                Err(e) => {
-                    error!("Failed to parse framerate config: {e}");
-                }
-            },
-            Err(e) => {
-                error!("Failed to read framerate config: {e}");
-            }
-        }
-    } else {
-        info!("No framerate config found at {}, using default", path.display());
-    }
-}
-
-/// Applies the loaded config to the actual `FramepaceSettings` resource
-fn apply_framerate_config(
-    config: Res<FramerateLimiter>,
+pub fn set_framerate(
+    mode: Res<FramerateMode>,
+    cap: Res<ManualFpsCap>,
     mut framepace: ResMut<FramepaceSettings>,
 ) {
-    framepace.limiter = Limiter::from(&*config);
-}
-
-/// Manually save the framerate config to disk
-pub fn save_framerate_config(world: &mut World) -> Result<(), String> {
-    let settings = world.get_resource::<FramepaceSettings>()
-        .ok_or("Missing FramepaceSettings")?;
-
-    let path = world.get_resource::<FramerateConfigPath>()
-        .ok_or("Missing FramerateConfigPath")?;
-
-    let config = FramerateLimiter::from(&settings.limiter);
-    let json = serde_json::to_string_pretty(&config)
-        .map_err(|e| format!("Failed to serialize config: {e}"))?;
-
-    if let Some(parent) = path.0.parent() {
-        fs::create_dir_all(parent)
-            .map_err(|e| format!("Failed to create config directory: {e}"))?;
-    }
-
-    fs::write(path.0, json)
-        .map_err(|e| format!("Failed to write framerate config: {e}"))?;
-
-    Ok(())
-}
-
-/// A system wrapper to call `save_framerate_config()` in schedules
-pub fn save_framerate_config_system(world: &mut World) {
-    if let Err(e) = save_framerate_config(world) {
-        error!("Failed to save framerate config: {e}");
-    } else {
-        info!("Framerate config saved.");
-    }
+    framepace.limiter = match *mode {
+        FramerateMode::Auto => Limiter::Auto,
+        FramerateMode::Manual => {
+            Limiter::Manual(Duration::from_secs_f64(1.0 / cap.0.max(1e-6)))
+        }
+        FramerateMode::Off => Limiter::Off,
+    };
 }

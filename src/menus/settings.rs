@@ -1,5 +1,5 @@
-use crate::framerate::FramerateLimiter;
-use crate::framerate::save_framerate_config_system;
+use crate::framerate::ManualFpsCap;
+use crate::framerate::FramerateMode;
 use bevy::{
     color::palettes::css::CRIMSON, 
     prelude::*
@@ -52,7 +52,8 @@ pub fn settings_sub_plugin(app: &mut App) {
             (
                 despawn_screen::<OnDisplaySettingsMenuScreen>,
                 save_setting_system::<DisplayQuality>,
-                save_framerate_config_system,
+                save_setting_system::<ManualFpsCap>,
+                save_setting_system::<FramerateMode>,
             ),
         )
         .add_systems(
@@ -190,7 +191,115 @@ fn settings_menu_setup(
 }
 
 
-fn display_settings_menu_setup(mut commands: Commands, display_quality: Res<DisplayQuality>) {
+// fn display_settings_menu_setup(mut commands: Commands, display_quality: Res<DisplayQuality>) {
+//     let button_node = Node {
+//         width: Val::Px(200.0),
+//         height: Val::Px(65.0),
+//         margin: UiRect::all(Val::Px(20.0)),
+//         justify_content: JustifyContent::Center,
+//         align_items: AlignItems::Center,
+//         ..default()
+//     };
+//     let button_text_style = (
+//         TextFont {
+//             font_size: 33.0,
+//             ..default()
+//         },
+//         TextColor(TEXT_COLOR),
+//     );
+
+//     commands
+//         .spawn((
+//             Node {
+//                 width: Val::Percent(100.0),
+//                 height: Val::Percent(100.0),
+//                 align_items: AlignItems::Center,
+//                 justify_content: JustifyContent::Center,
+//                 ..default()
+//             },
+//             OnDisplaySettingsMenuScreen,
+//         ))
+//         .with_children(|parent| {
+//             parent
+//                 .spawn((
+//                     Node {
+//                         flex_direction: FlexDirection::Column,
+//                         align_items: AlignItems::Center,
+//                         ..default()
+//                     },
+//                     BackgroundColor(CRIMSON.into()),
+//                 ))
+//                 .with_children(|parent| {
+//                     // Create a new `Node`, this time not setting its `flex_direction`. It will
+//                     // use the default value, `FlexDirection::Row`, from left to right.
+//                     parent
+//                         .spawn((
+//                             Node {
+//                                 align_items: AlignItems::Center,
+//                                 ..default()
+//                             },
+//                             BackgroundColor(CRIMSON.into()),
+//                         ))
+//                         .with_children(|parent| {
+//                             // Display a label for the current setting
+//                             parent.spawn((
+//                                 Text::new("Display Quality"),
+//                                 button_text_style.clone(),
+//                             ));
+//                             // Display a button for each possible value
+//                             for quality_setting in [
+//                                 DisplayQuality::Low,
+//                                 DisplayQuality::Medium,
+//                                 DisplayQuality::High,
+//                             ] {
+//                                 let mut entity = parent.spawn((
+//                                     BasicButton,
+//                                     Button,
+//                                     Node {
+//                                         width: Val::Px(150.0),
+//                                         height: Val::Px(65.0),
+//                                         ..button_node.clone()
+//                                     },
+//                                     BackgroundColor(NORMAL_BUTTON),
+//                                     quality_setting,
+//                                 ));
+//                                 entity.with_children(|parent| {
+//                                     parent.spawn((
+//                                         Text::new(format!("{quality_setting:?}")),
+//                                         button_text_style.clone(),
+//                                     ));
+//                                 });
+//                                 if *display_quality == quality_setting {
+//                                     entity.insert(SelectedOption);
+//                                 }
+//                             }
+//                         });
+//                     // Display the back button to return to the settings screen
+//                     parent
+//                         .spawn((
+//                             Button,
+//                             BasicButton,
+//                             button_node,
+//                             BackgroundColor(NORMAL_BUTTON),
+//                             MenuButtonAction::BackToSettings,
+//                         ))
+//                         .with_children(|parent| {
+//                             parent.spawn((Text::new("Back"), button_text_style));
+//                         });
+//                 });
+//         });
+// }
+
+fn display_settings_menu_setup(
+    mut commands: Commands,
+    display_quality: Res<DisplayQuality>,
+    fps_cap: Res<ManualFpsCap>,
+    framerate_mode: Res<FramerateMode>,
+) {
+
+    //for later when we do fps slider
+    let mut slider_container = None;
+
     let button_node = Node {
         width: Val::Px(200.0),
         height: Val::Px(65.0),
@@ -229,8 +338,7 @@ fn display_settings_menu_setup(mut commands: Commands, display_quality: Res<Disp
                     BackgroundColor(CRIMSON.into()),
                 ))
                 .with_children(|parent| {
-                    // Create a new `Node`, this time not setting its `flex_direction`. It will
-                    // use the default value, `FlexDirection::Row`, from left to right.
+                    // --- Display Quality Row ---
                     parent
                         .spawn((
                             Node {
@@ -240,12 +348,7 @@ fn display_settings_menu_setup(mut commands: Commands, display_quality: Res<Disp
                             BackgroundColor(CRIMSON.into()),
                         ))
                         .with_children(|parent| {
-                            // Display a label for the current setting
-                            parent.spawn((
-                                Text::new("Display Quality"),
-                                button_text_style.clone(),
-                            ));
-                            // Display a button for each possible value
+                            parent.spawn((Text::new("Display Quality"), button_text_style.clone()));
                             for quality_setting in [
                                 DisplayQuality::Low,
                                 DisplayQuality::Medium,
@@ -273,7 +376,69 @@ fn display_settings_menu_setup(mut commands: Commands, display_quality: Res<Disp
                                 }
                             }
                         });
-                    // Display the back button to return to the settings screen
+
+                    // --- Framerate Mode Buttons ---
+                    parent
+                        .spawn((
+                            Node {
+                                align_items: AlignItems::Center,
+                                margin: UiRect::all(Val::Px(15.0)),
+                                ..default()
+                            },
+                            BackgroundColor(CRIMSON.into()),
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn((Text::new("Framerate Mode"), button_text_style.clone()));
+                            for mode in [
+                                FramerateMode::Auto,
+                                FramerateMode::Manual,
+                                FramerateMode::Off,
+                            ] {
+                                let mut entity = parent.spawn((
+                                    BasicButton,
+                                    Button,
+                                    Node {
+                                        width: Val::Px(140.0),
+                                        height: Val::Px(55.0),
+                                        margin: UiRect::all(Val::Px(8.0)),
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(NORMAL_BUTTON),
+                                    mode,
+                                ));
+                                entity.with_children(|parent| {
+                                    parent.spawn((
+                                        Text::new(format!("{mode:?}")),
+                                        button_text_style.clone(),
+                                    ));
+                                });
+                                if *framerate_mode == mode {
+                                    entity.insert(SelectedOption);
+                                }
+                            }
+                        });
+
+                    // --- Manual FPS Slider (only in Manual mode) ---
+
+                    // Use a scope to release the borrow on `parent`
+                    slider_container = Some(
+                        parent
+                            .spawn(Node {
+                                align_items: AlignItems::Center,
+                                ..default()
+                            })
+                            .id()
+                    );
+
+                    // Continue using `parent` safely
+                    parent.spawn((Text::new("FPS Limit"), button_text_style.clone()));
+                    create_setting_text(parent, &fps_cap);
+
+                        
+
+                    // --- Back Button ---
                     parent
                         .spawn((
                             Button,
@@ -283,11 +448,34 @@ fn display_settings_menu_setup(mut commands: Commands, display_quality: Res<Disp
                             MenuButtonAction::BackToSettings,
                         ))
                         .with_children(|parent| {
-                            parent.spawn((Text::new("Back"), button_text_style));
+                            parent.spawn((Text::new("Back"), button_text_style.clone()));
                         });
                 });
         });
+        spawn_slider_system::<ManualFpsCap, OnDisplaySettingsMenuScreen>(
+                            commands,
+                            Node {
+                                width: Val::Px(250.0),
+                                height: Val::Px(20.0),
+                                margin: UiRect::all(Val::Px(20.0)),
+                                align_self: AlignSelf::Center,
+                                ..default()
+                            },
+                            Some(Node {
+                                width: Val::Px(20.0),
+                                height: Val::Px(30.0),
+                                position_type: PositionType::Absolute,
+                                left: Val::Px(0.0),
+                                top: Val::Px(-5.0),
+                                ..default()
+                            }),
+                            OnDisplaySettingsMenuScreen,
+                            Some(slider_container.unwrap()),
+                            Some(fps_cap),
+                        );
 }
+
+
 
 
 fn sound_settings_menu_setup(
