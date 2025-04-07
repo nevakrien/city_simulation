@@ -46,7 +46,12 @@ pub struct SelectedOption;
 pub fn button_system(
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor, Option<&SelectedOption>),
-        (Changed<Interaction>, With<SettingButton>),>,
+        (   
+            Or<
+               (Changed<Interaction>,
+                Changed<SelectedOption>)
+            >
+            , With<SettingButton>),>,
 ) {
     for (interaction, mut background_color, selected) in &mut interaction_query {
         *background_color = match (*interaction, selected) {
@@ -77,6 +82,8 @@ pub fn setting_button<T: Resource + Component + PartialEq + Copy>(
         }
     }
 }
+
+
 
 // Commented out old slider implementation
 // ...

@@ -45,15 +45,23 @@ pub fn settings_sub_plugin(app: &mut App) {
         )
         .add_systems(
             Update,
-            setting_button::<DisplayQuality>.run_if(in_state(SettingsState::Display)),
+            (
+                setting_button::<DisplayQuality>,
+                setting_button::<FramerateMode>,
+                drag_slider_system::<ManualFpsCap>,
+                update_resource_text::<ManualFpsCap>.run_if(resource_changed::<ManualFpsCap>),
+
+
+            ).run_if(in_state(SettingsState::Display)),
         )
         .add_systems(
             OnExit(SettingsState::Display),
             (
                 despawn_screen::<OnDisplaySettingsMenuScreen>,
                 save_setting_system::<DisplayQuality>,
-                save_setting_system::<ManualFpsCap>,
                 save_setting_system::<FramerateMode>,
+                save_setting_system::<ManualFpsCap>,                
+
             ),
         )
         .add_systems(
@@ -64,7 +72,7 @@ pub fn settings_sub_plugin(app: &mut App) {
             Update,
             (
                 drag_slider_system::<Volume>,
-                update_resource_text::<Volume>.run_if(resource_changed::<Volume>)
+                update_resource_text::<Volume>.run_if(resource_changed::<Volume>),
             )
             .run_if(in_state(SettingsState::Sound)),
         )
