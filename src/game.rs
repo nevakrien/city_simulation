@@ -7,8 +7,8 @@ use bevy::{
 };
 
 use crate::{
-    common::despawn_screen,
-    globals::{GameState, DisplayQuality, Volume},
+    common::{despawn_screen,StageSelect},
+    settings::globals::{DisplayQuality, Volume},
     graphics::{ATTRIBUTE_BLEND_COLOR, CustomMaterial, DumbyMatrial},
     menus::{
         settings::SettingsState,
@@ -39,10 +39,10 @@ pub fn game_plugin(app: &mut App) {
         .init_state::<PlayState>() 
 
 
-        .add_systems(OnEnter(GameState::Game), game_setup)
+        .add_systems(OnEnter(StageSelect::Game), game_setup)
         .add_systems(Update, absolute_camera_control_system.run_if(in_state(PlayState::Play)))
-        .add_systems(Update, toggle_settings_with_escape.run_if(in_state(GameState::Game)))
-        .add_systems(OnExit(GameState::Game), despawn_screen::<OnGameScreen>);
+        .add_systems(Update, toggle_settings_with_escape.run_if(in_state(StageSelect::Game)))
+        .add_systems(OnExit(StageSelect::Game), despawn_screen::<OnGameScreen>);
 }
 
 // Tag component used to tag entities added on the game screen
@@ -141,12 +141,12 @@ fn game_setup(
 // // Tick the timer, and change state when finished
 // fn game(
 //     time: Res<Time>,
-//     mut game_state: ResMut<NextState<GameState>>,
+//     mut game_state: ResMut<NextState<StageSelect>>,
 //     mut play_state: ResMut<NextState<PlayState>>,
 //     // mut timer: ResMut<GameTimer>,
 // ) {
 //     if timer.tick(time.delta()).finished() {
-//         game_state.set(GameState::Menu);
+//         game_state.set(StageSelect::Menu);
 //         play_state.set(PlayState::Disabled);
 //     }
 // }

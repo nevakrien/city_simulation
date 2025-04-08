@@ -1,56 +1,15 @@
-use std::fmt;
-use crate::settings_io::load_settings_system;
-use crate::settings_io::SettingPlugin;
-use crate::globals::Slidble;
+pub use crate::settings::globals::FramerateMode;
+pub use crate::settings::globals::VsyncMode;
+pub use crate::settings::globals::ManualFpsCap;
+
+use crate::settings::settings_io::load_settings_system;
+use crate::settings::settings_io::SettingPlugin;
 use std::{path::Path, time::Duration};
 
 use bevy::prelude::*;
 use bevy::window::PresentMode;
 use bevy_framepace::{FramepacePlugin, FramepaceSettings, Limiter};
-use serde::{Deserialize, Serialize};
 
-
-#[derive(Resource,Component,Default, Debug, Clone,Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum FramerateMode {
-    #[default]
-    Auto,
-    Manual,
-    Off,
-}
-
-// Separate VSync setting
-#[derive(Resource,Component,Default, Debug, Clone,Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum VsyncMode {
-    #[default]
-    Enabled,
-    Disabled,
-}
-
-//only use for manual framerate mode
-#[derive(Resource,Component, Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
-pub struct ManualFpsCap(pub f64);
-
-
-impl Default for ManualFpsCap {
-    fn default() -> Self {
-        ManualFpsCap(60.0)
-    }
-}
-
-impl Slidble for ManualFpsCap{
-    fn as_fraction(&self) -> f32{
-        ((self.0-1.0)/199.0) as f32
-    }
-    fn from_fraction(fraction: f32) -> Self{
-        ManualFpsCap(199.0 as f64*fraction as f64 +1.0)
-    }
-}
-
-impl fmt::Display for ManualFpsCap {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:.0} FPS", self.0)
-    }
-}
 
 pub fn framerate_plugin(app: &mut App) {
     let fps_plugin = SettingPlugin::new(Path::new("assets/settings/fps_cap_slider.json"),ManualFpsCap(60.0)); 

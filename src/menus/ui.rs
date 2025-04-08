@@ -3,7 +3,7 @@
 use std::{fmt::Display, marker::PhantomData};
 use bevy::prelude::*;
 
-use crate::globals::Slidble;
+use crate::settings::globals::Slidble;
 
 //colors
 

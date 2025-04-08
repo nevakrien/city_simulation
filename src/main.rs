@@ -12,10 +12,13 @@ use bevy::{
 
 use city_simulation::{
     game,
-    globals::{GameState, DisplayQuality, Volume},
     menus::{menu, splash},
-    settings_io::SettingPlugin,
-    framerate::{framerate_plugin}
+    common::StageSelect,
+    settings::{
+        globals::{DisplayQuality, Volume},
+        settings_io::SettingPlugin,
+        framerate::{framerate_plugin}
+    }
 };
 
 
@@ -44,7 +47,7 @@ fn main() {
 
 
         // Declare the game state, whose starting value is determined by the `Default` trait
-        .init_state::<GameState>()
+        .init_state::<StageSelect>()
         .add_systems(Startup, setup)
         // Adds the plugins for each state
         .add_plugins((splash::splash_plugin, menu::menu_plugin, game::game_plugin))

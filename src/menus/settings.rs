@@ -1,15 +1,12 @@
-use crate::framerate::ManualFpsCap;
-use crate::framerate::FramerateMode;
-use crate::framerate::VsyncMode;
 use bevy::{
     color::palettes::css::CRIMSON, 
     prelude::*
 };
 
 use crate::{
-    globals::{GameState, DisplayQuality, Volume},
+    common::{despawn_screen,StageSelect},
+    settings::globals::{DisplayQuality, Volume},
     menus::{
-        despawn_screen,
         menu::MenuButtonAction,
         ui::{
             SettingButton, COLOR_GRAY, COLOR_MAROON, COLOR_RED, COLOR_WHITE, NORMAL_BUTTON,
@@ -17,7 +14,14 @@ use crate::{
             setting_button, spawn_slider_system, update_resource_text,
         },
     },
-    settings_io::save_setting_system,
+    settings::{
+        settings_io::save_setting_system,
+        framerate::{
+            ManualFpsCap,
+            FramerateMode,
+            VsyncMode,
+        },
+    }
 };
 
 // State used for the current menu screen
@@ -100,7 +104,7 @@ struct OnSoundSettingsMenuScreen;
 
 fn settings_menu_setup(
     mut commands: Commands,
-    game_state: Res<State<GameState>>,
+    game_state: Res<State<StageSelect>>,
 ) {
     let button_node = Node {
         width: Val::Px(200.0),
@@ -142,7 +146,7 @@ fn settings_menu_setup(
                 ))
                 .with_children(|parent| {
                     // --- TOP: Add Resume if in Game ---
-                    if *game_state.get() == GameState::Game {
+                    if *game_state.get() == StageSelect::Game {
                         parent
                             .spawn((
                                 SettingButton,
@@ -179,7 +183,7 @@ fn settings_menu_setup(
 
                     // --- BOTTOM: Back or Main Menu depending on context ---
                     let (action, label) = match game_state.get() {
-                        GameState::Menu => (MenuButtonAction::BackToMainMenu, "Back"),
+                        StageSelect::Menu => (MenuButtonAction::BackToMainMenu, "Back"),
                         _ => (MenuButtonAction::BackToMainMenu, "Main Menu"),
                     };
 

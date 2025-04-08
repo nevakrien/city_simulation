@@ -1,7 +1,5 @@
 pub mod common;
-pub mod framerate;
+pub mod settings;
 pub mod game;
-pub mod globals;
 pub mod graphics;
 pub mod menus;
-pub mod settings_io;
