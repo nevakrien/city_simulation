@@ -40,7 +40,7 @@ pub fn game_plugin(app: &mut App) {
 
 
         .add_systems(OnEnter(GameState::Game), game_setup)
-        .add_systems(Update, camera_control_system.run_if(in_state(PlayState::Play)))
+        .add_systems(Update, absolute_camera_control_system.run_if(in_state(PlayState::Play)))
         .add_systems(Update, toggle_settings_with_escape.run_if(in_state(GameState::Game)))
         .add_systems(OnExit(GameState::Game), despawn_screen::<OnGameScreen>);
 }
@@ -49,15 +49,11 @@ pub fn game_plugin(app: &mut App) {
 #[derive(Component)]
 pub struct OnGameScreen;
 
-#[derive(Resource, Deref, DerefMut)]
-struct GameTimer(Timer);
-
-
 
 fn game_setup(
     mut commands: Commands,
-    display_quality: Res<DisplayQuality>,
-    volume: Res<Volume>,
+    _display_quality: Res<DisplayQuality>,
+    _volume: Res<Volume>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut dumby_materials: ResMut<Assets<DumbyMatrial>>,
     mut custom_materials: ResMut<Assets<CustomMaterial>>,
@@ -80,7 +76,41 @@ fn game_setup(
         .with_inserted_attribute(
             ATTRIBUTE_BLEND_COLOR,
             // The cube mesh has 24 vertices (6 faces, 4 vertices per face), so we insert one BlendColor for each
-            vec![[1.0, 0.0, 0.0, 1.0]; 24],
+            // vec![[1.0, 0.0, 0.0, 1.0]; 24],
+            // vec![[0.2, 0.2, 0.7, 1.0]; 24],
+            
+            // vec![[0.3, 0.2, 0.9, 1.0]; 24],
+            vec![[0.15, 0.3, 0.9, 1.0]; 24],
+
+            // (0..24).map(|i| if i%2==0 {[0.3, 0.2, 0.9, 1.0]} else {[0.15, 0.3, 0.9, 1.0]}).collect::<Vec<_>>()
+            // (0..24).map(|i| if i%3 ==0 || i%6==5 {[0.3, 0.2, 0.9, 1.0]} else {[0.15, 0.3, 0.9, 1.0]}).collect::<Vec<_>>()
+
+            // vec![
+            //     // Face 1 (Front)
+            //     [1.0, 0.0, 0.0, 1.0], [1.0, 0.0, 0.0, 1.0],
+            //     [1.0, 0.2, 0.2, 1.0], [1.0, 0.2, 0.2, 1.0],
+
+            //     // Face 2 (Back)
+            //     [0.0, 1.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0],
+            //     [0.2, 1.0, 0.2, 1.0], [0.2, 1.0, 0.2, 1.0],
+
+            //     // Face 3 (Top)
+            //     [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0],
+            //     [0.2, 0.2, 1.0, 1.0], [0.2, 0.2, 1.0, 1.0],
+
+            //     // Face 4 (Bottom)
+            //     [1.0, 1.0, 0.0, 1.0], [1.0, 1.0, 0.0, 1.0],
+            //     [1.0, 1.0, 0.2, 1.0], [1.0, 1.0, 0.2, 1.0],
+
+            //     // Face 5 (Left)
+            //     [0.0, 1.0, 1.0, 1.0], [0.0, 1.0, 1.0, 1.0],
+            //     [0.2, 1.0, 1.0, 1.0], [0.2, 1.0, 1.0, 1.0],
+
+            //     // Face 6 (Right)
+            //     [1.0, 0.0, 1.0, 1.0], [1.0, 0.0, 1.0, 1.0],
+            //     [1.0, 0.2, 1.0, 1.0], [1.0, 0.2, 1.0, 1.0],
+            // ],
+
         );
 
     // cube
@@ -145,77 +175,8 @@ fn toggle_settings_with_escape(
 }
 
 
-// fn camera_movement_system(
-//     time: Res<Time>,
-//     keys: Res<ButtonInput<KeyCode>>,
-//     mut query: Query<&mut Transform, With<Camera3d>>,
-// ) {
-//     let mut transform = match query.get_single_mut() {
-//         Ok(t) => t,
-//         Err(_) => return,
-//     };
-
-//     let mut direction = Vec3::ZERO;
-//     let forward = *transform.forward();
-//     let right = *transform.right();
-//     let up = Vec3::Y;
-
-//     let speed = 5.0;
-//     let rotation_speed = std::f32::consts::PI; // radians per second
-//     let delta = time.delta_secs();
-
-//     // Translation movement (WASD + QE)
-//     if keys.pressed(KeyCode::KeyW) {
-//         direction += forward;
-//     }
-//     if keys.pressed(KeyCode::KeyS) {
-//         direction -= forward;
-//     }
-//     if keys.pressed(KeyCode::KeyA) {
-//         direction -= right;
-//     }
-//     if keys.pressed(KeyCode::KeyD) {
-//         direction += right;
-//     }
-//     if keys.pressed(KeyCode::KeyE) {
-//         direction += up;
-//     }
-//     if keys.pressed(KeyCode::KeyQ) {
-//         direction -= up;
-//     }
-
-//     if direction.length_squared() > 0.0 {
-//         transform.translation += direction.normalize() * speed * delta;
-//     }
-
-//     // Rotation with arrow keys
-//     let mut yaw = 0.0;
-//     let mut pitch = 0.0;
-
-//     if keys.pressed(KeyCode::ArrowLeft) {
-//         yaw += 1.0;
-//     }
-//     if keys.pressed(KeyCode::ArrowRight) {
-//         yaw -= 1.0;
-//     }
-//     if keys.pressed(KeyCode::ArrowUp) {
-//         pitch += 1.0;
-//     }
-//     if keys.pressed(KeyCode::ArrowDown) {
-//         pitch -= 1.0;
-//     }
-
-//     if yaw != 0.0 {
-//         transform.rotate_y(yaw * rotation_speed * delta);
-//     }
-
-//     if pitch != 0.0 {
-//         // Local X axis for pitch
-//         transform.rotate_local_x(pitch * rotation_speed * delta);
-//     }
-// }
-
-fn camera_control_system(
+///this system is semtric on every direction and is mostly here for debuging
+fn absolute_camera_control_system(
     time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
     mut query: Query<&mut Transform, With<Camera3d>>,

@@ -15,6 +15,9 @@ use bevy::{
 const ANIMATE_SHADER_PATH: &str = "bevy_examples/shaders/animate_shader.wgsl";
 const CUSTOM_SHADER_PATH: &str = "bevy_examples/shaders/custom_vertex_attribute.wgsl";
 
+
+// A "high" random id should be used for custom attributes to ensure consistent sorting and avoid collisions with other attributes.
+// See the MeshVertexAttribute docs for more info.
 pub const ATTRIBUTE_BLEND_COLOR: MeshVertexAttribute =
     MeshVertexAttribute::new("BlendColor", 988540917, VertexFormat::Float32x4);
 
