@@ -1,5 +1,6 @@
 use crate::framerate::ManualFpsCap;
 use crate::framerate::FramerateMode;
+use crate::framerate::VsyncMode;
 use bevy::{
     color::palettes::css::CRIMSON, 
     prelude::*
@@ -48,10 +49,9 @@ pub fn settings_sub_plugin(app: &mut App) {
             (
                 setting_button::<DisplayQuality>,
                 setting_button::<FramerateMode>,
+                setting_button::<VsyncMode>,
                 drag_slider_system::<ManualFpsCap>,
                 update_resource_text::<ManualFpsCap>.run_if(resource_changed::<ManualFpsCap>),
-
-
             ).run_if(in_state(SettingsState::Display)),
         )
         .add_systems(
@@ -60,8 +60,8 @@ pub fn settings_sub_plugin(app: &mut App) {
                 despawn_screen::<OnDisplaySettingsMenuScreen>,
                 save_setting_system::<DisplayQuality>,
                 save_setting_system::<FramerateMode>,
+                save_setting_system::<VsyncMode>,
                 save_setting_system::<ManualFpsCap>,                
-
             ),
         )
         .add_systems(
@@ -303,6 +303,7 @@ fn display_settings_menu_setup(
     display_quality: Res<DisplayQuality>,
     fps_cap: Res<ManualFpsCap>,
     framerate_mode: Res<FramerateMode>,
+    vsync_mode: Res<VsyncMode>,
 ) {
 
     //for later when we do fps slider
@@ -380,6 +381,52 @@ fn display_settings_menu_setup(
                                     ));
                                 });
                                 if *display_quality == quality_setting {
+                                    entity.insert(SelectedOption);
+                                }
+                            }
+                        });
+
+                    // --- VSync Setting ---
+                    parent
+                        .spawn((
+                            Node {
+                                align_items: AlignItems::Center,
+                                margin: UiRect::all(Val::Px(15.0)),
+                                ..default()
+                            },
+                            BackgroundColor(CRIMSON.into()),
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn((Text::new("VSync"), button_text_style.clone()));
+                            for mode in [
+                                VsyncMode::Enabled,
+                                VsyncMode::Disabled,
+                            ] {
+                                let mut entity = parent.spawn((
+                                    SettingButton,
+                                    Button,
+                                    Node {
+                                        width: Val::Px(180.0), // Increased width
+                                        height: Val::Px(60.0), // Increased height
+                                        margin: UiRect::all(Val::Px(10.0)),
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(NORMAL_BUTTON),
+                                    mode,
+                                ));
+                                entity.with_children(|parent| {
+                                    let label = match mode {
+                                        VsyncMode::Enabled => "Enabled",
+                                        VsyncMode::Disabled => "Disabled",
+                                    };
+                                    parent.spawn((
+                                        Text::new(label),
+                                        button_text_style.clone(),
+                                    ));
+                                });
+                                if *vsync_mode == mode {
                                     entity.insert(SelectedOption);
                                 }
                             }
