@@ -5,6 +5,7 @@ use crate::globals::Slidble;
 use std::{path::Path, time::Duration};
 
 use bevy::prelude::*;
+use bevy::window::PresentMode;
 use bevy_framepace::{FramepacePlugin, FramepaceSettings, Limiter};
 use serde::{Deserialize, Serialize};
 
@@ -64,6 +65,7 @@ pub fn set_framerate(
     mode: Res<FramerateMode>,
     cap: Res<ManualFpsCap>,
     mut framepace: ResMut<FramepaceSettings>,
+    mut window: Single<&mut Window>,
 ) {
     framepace.limiter = match *mode {
         FramerateMode::Auto => Limiter::Auto,
@@ -72,4 +74,9 @@ pub fn set_framerate(
         }
         FramerateMode::Off => Limiter::Off,
     };
+
+    window.present_mode = match *mode {
+        FramerateMode::Auto => PresentMode::AutoVsync,
+        _ => PresentMode::AutoNoVsync,
+    }
 }
