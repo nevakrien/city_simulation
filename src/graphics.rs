@@ -1,64 +1,41 @@
+//! A shader and a material that uses it.
+
 use bevy::{
     prelude::*,
     reflect::TypePath,
-    // render::render_resource::{AsBindGroup, ShaderRef},
-    pbr::{MaterialPipeline, MaterialPipelineKey},
-    render::{
-        mesh::{MeshVertexAttribute, MeshVertexBufferLayoutRef},
-        render_resource::{
-            AsBindGroup, RenderPipelineDescriptor, ShaderRef, SpecializedMeshPipelineError,
-            VertexFormat,
-        },
-    },
+    render::render_resource::{AsBindGroup, ShaderRef},
+    sprite::{AlphaMode2d, Material2d, Material2dPlugin},
 };
 
-const ANIMATE_SHADER_PATH: &str = "bevy_examples/shaders/animate_shader.wgsl";
-const CUSTOM_SHADER_PATH: &str = "bevy_examples/shaders/custom_vertex_attribute.wgsl";
+/// This example uses a shader source file from the assets subdirectory
+const SHADER_ASSET_PATH: &str = "shaders/first_shader.wgsl";
 
-
-// A "high" random id should be used for custom attributes to ensure consistent sorting and avoid collisions with other attributes.
-// See the MeshVertexAttribute docs for more info.
-pub const ATTRIBUTE_BLEND_COLOR: MeshVertexAttribute =
-    MeshVertexAttribute::new("BlendColor", 988540917, VertexFormat::Float32x4);
+pub fn graphics_plugin(app:&mut App) {
+    app
+        .add_plugins((
+            Material2dPlugin::<CustomMaterial>::default(),
+        ))
+    ;
+}
 
 // This is the struct that will be passed to your shader
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
 pub struct CustomMaterial {
     #[uniform(0)]
     pub color: LinearRgba,
+    #[texture(1)]
+    #[sampler(2)]
+    pub color_texture: Option<Handle<Image>>,
 }
 
-
-
-impl Material for CustomMaterial {
-    fn vertex_shader() -> ShaderRef {
-        CUSTOM_SHADER_PATH.into()
-    }
+/// The Material2d trait is very configurable, but comes with sensible defaults for all methods.
+/// You only need to implement functions for features that need non-default behavior. See the Material2d api docs for details!
+impl Material2d for CustomMaterial {
     fn fragment_shader() -> ShaderRef {
-        CUSTOM_SHADER_PATH.into()
+        SHADER_ASSET_PATH.into()
     }
 
-    fn specialize(
-        _pipeline: &MaterialPipeline<Self>,
-        descriptor: &mut RenderPipelineDescriptor,
-        layout: &MeshVertexBufferLayoutRef,
-        _key: MaterialPipelineKey<Self>,
-    ) -> Result<(), SpecializedMeshPipelineError> {
-        let vertex_layout = layout.0.get_layout(&[
-            Mesh::ATTRIBUTE_POSITION.at_shader_location(0),
-            ATTRIBUTE_BLEND_COLOR.at_shader_location(1),
-        ])?;
-        descriptor.vertex.buffers = vec![vertex_layout];
-        Ok(())
-    }
-}
-
-// Define the custom material for our shader
-#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
-pub struct DumbyMatrial {}
-
-impl Material for DumbyMatrial {
-    fn fragment_shader() -> ShaderRef {
-        ANIMATE_SHADER_PATH.into()
+    fn alpha_mode(&self) -> AlphaMode2d {
+        AlphaMode2d::Mask(0.5)
     }
 }

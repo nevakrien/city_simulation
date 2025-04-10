@@ -4,15 +4,17 @@ use bevy::{
         ButtonInput,
         keyboard::KeyCode,
     },
+    sprite::{Wireframe2dConfig, Wireframe2dPlugin}
 };
 
 use crate::{
     common::{despawn_screen,StageSelect},
     settings::globals::{DisplayQuality, Volume},
-    graphics::{ATTRIBUTE_BLEND_COLOR, CustomMaterial, DumbyMatrial},
+    // graphics::{ATTRIBUTE_BLEND_COLOR, CustomMaterial, DumbyMatrial},
     menus::{
         settings::SettingsState,
     },
+    graphics::{graphics_plugin,CustomMaterial},
 };
 
 
@@ -31,17 +33,14 @@ pub enum PlayState {
 
 // This plugin will contain the game with an animated shader
 pub fn game_plugin(app: &mut App) {
-    app.add_plugins((
-        MaterialPlugin::<DumbyMatrial>::default(),
-        MaterialPlugin::<CustomMaterial>::default(),
-        ))
-
+    app
+        .add_plugins((graphics_plugin,Wireframe2dPlugin::default(),))
         .init_state::<PlayState>() 
 
 
         .add_systems(OnEnter(StageSelect::Game), game_setup)
-        .add_systems(Update, absolute_camera_control_system.run_if(in_state(PlayState::Play)))
-        .add_systems(Update, toggle_settings_with_escape.run_if(in_state(StageSelect::Game)))
+        .add_systems(Update, camera_control_system_2d.run_if(in_state(PlayState::Play)))
+        .add_systems(Update, (toggle_settings_with_escape,toggle_wireframe).run_if(in_state(StageSelect::Game)))
         .add_systems(OnExit(StageSelect::Game), despawn_screen::<OnGameScreen>);
 }
 
@@ -54,103 +53,45 @@ fn game_setup(
     mut commands: Commands,
     _display_quality: Res<DisplayQuality>,
     _volume: Res<Volume>,
+
+    asset_server: Res<AssetServer>,
+
     mut meshes: ResMut<Assets<Mesh>>,
-    mut dumby_materials: ResMut<Assets<DumbyMatrial>>,
+    mut color_materials: ResMut<Assets<ColorMaterial>>,
     mut custom_materials: ResMut<Assets<CustomMaterial>>,
 
     mut next_play_state: ResMut<NextState<PlayState>>,
 ) {
     next_play_state.set(PlayState::Play);
 
-    // Spawn the 3D cube with custom shader material
+    //simple shapes
+    let circle = meshes.add(Circle::new(50.0));
+
     commands.spawn((
-        Mesh3d(meshes.add(Cuboid::default())),
-        MeshMaterial3d(dumby_materials.add(DumbyMatrial {})),
-        Transform::from_xyz(1.0, 1.2, 0.4),
-        OnGameScreen, // Tag it so it gets despawned correctly
+        Mesh2d(circle.clone()),
+        MeshMaterial2d(color_materials.add(Color::srgb(0.15, 0.3, 0.9))),
+        Transform::from_xyz(39.0, 40.0, 100.0),
+
     ));
 
-    //spawn custom shader cube
-    let mesh = Mesh::from(Cuboid::default())
-        // Sets the custom attribute
-        .with_inserted_attribute(
-            ATTRIBUTE_BLEND_COLOR,
-            // The cube mesh has 24 vertices (6 faces, 4 vertices per face), so we insert one BlendColor for each
-            // vec![[1.0, 0.0, 0.0, 1.0]; 24],
-            // vec![[0.2, 0.2, 0.7, 1.0]; 24],
-            
-            // vec![[0.3, 0.2, 0.9, 1.0]; 24],
-            vec![[0.15, 0.3, 0.9, 1.0]; 24],
-
-            // (0..24).map(|i| if i%2==0 {[0.3, 0.2, 0.9, 1.0]} else {[0.15, 0.3, 0.9, 1.0]}).collect::<Vec<_>>()
-            // (0..24).map(|i| if i%3 ==0 || i%6==5 {[0.3, 0.2, 0.9, 1.0]} else {[0.15, 0.3, 0.9, 1.0]}).collect::<Vec<_>>()
-
-            // vec![
-            //     // Face 1 (Front)
-            //     [1.0, 0.0, 0.0, 1.0], [1.0, 0.0, 0.0, 1.0],
-            //     [1.0, 0.2, 0.2, 1.0], [1.0, 0.2, 0.2, 1.0],
-
-            //     // Face 2 (Back)
-            //     [0.0, 1.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0],
-            //     [0.2, 1.0, 0.2, 1.0], [0.2, 1.0, 0.2, 1.0],
-
-            //     // Face 3 (Top)
-            //     [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0],
-            //     [0.2, 0.2, 1.0, 1.0], [0.2, 0.2, 1.0, 1.0],
-
-            //     // Face 4 (Bottom)
-            //     [1.0, 1.0, 0.0, 1.0], [1.0, 1.0, 0.0, 1.0],
-            //     [1.0, 1.0, 0.2, 1.0], [1.0, 1.0, 0.2, 1.0],
-
-            //     // Face 5 (Left)
-            //     [0.0, 1.0, 1.0, 1.0], [0.0, 1.0, 1.0, 1.0],
-            //     [0.2, 1.0, 1.0, 1.0], [0.2, 1.0, 1.0, 1.0],
-
-            //     // Face 6 (Right)
-            //     [1.0, 0.0, 1.0, 1.0], [1.0, 0.0, 1.0, 1.0],
-            //     [1.0, 0.2, 1.0, 1.0], [1.0, 0.2, 1.0, 1.0],
-            // ],
-
-        );
-
-    // cube
     commands.spawn((
-        Mesh3d(meshes.add(mesh)),
-        MeshMaterial3d(custom_materials.add(CustomMaterial {
-            color: LinearRgba::WHITE,
+        Mesh2d(circle),
+        MeshMaterial2d(color_materials.add(Color::srgba(0.3, 0.2, 0.9,0.3))),
+        Transform::from_xyz(0.0,0.0,40.0),
+
+    ));
+
+    //custom shader
+    commands.spawn((
+        Mesh2d(meshes.add(Rectangle::default())),
+        MeshMaterial2d(custom_materials.add(CustomMaterial {
+            color: LinearRgba::RED,
+            color_texture: Some(asset_server.load("bevy_examples/branding/icon.png")),
         })),
-        Transform::from_xyz(-1.0, 1.2, 0.4),
-        OnGameScreen, // Tag it so it gets despawned correctly
+        Transform::default().with_scale(Vec3::splat(128.)),
     ));
 
-    // Add a camera to view the 3D scene
-    commands.spawn((
-        Camera{
-            order:10,
-            ..default()
-        },
-        Camera3d::default(),
-        Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        OnGameScreen, // Tag it so it gets despawned correctly
-    ));
-
-    // Spawn a 5 seconds timer to trigger going back to the menu
-    // commands.insert_resource(GameTimer(Timer::from_seconds(5.0, TimerMode::Once)));
 }
-
-// // Tick the timer, and change state when finished
-// fn game(
-//     time: Res<Time>,
-//     mut game_state: ResMut<NextState<StageSelect>>,
-//     mut play_state: ResMut<NextState<PlayState>>,
-//     // mut timer: ResMut<GameTimer>,
-// ) {
-//     if timer.tick(time.delta()).finished() {
-//         game_state.set(StageSelect::Menu);
-//         play_state.set(PlayState::Disabled);
-//     }
-// }
-
 
 fn toggle_settings_with_escape(
     keys: Res<ButtonInput<KeyCode>>,
@@ -174,12 +115,20 @@ fn toggle_settings_with_escape(
     }
 }
 
+fn toggle_wireframe(
+    mut wireframe_config: ResMut<Wireframe2dConfig>,
+    keyboard: Res<ButtonInput<KeyCode>>,
+) {
+    if keyboard.just_pressed(KeyCode::Space) {
+        wireframe_config.global = !wireframe_config.global;
+    }
+}
 
-///this system is semtric on every direction and is mostly here for debuging
-fn absolute_camera_control_system(
+
+fn camera_control_system_2d(
     time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
-    mut query: Query<&mut Transform, With<Camera3d>>,
+    mut query: Query<&mut Transform, With<Camera2d>>,
 ) {
     let mut transform = match query.get_single_mut() {
         Ok(t) => t,
@@ -187,61 +136,24 @@ fn absolute_camera_control_system(
     };
 
     let delta = time.delta_secs();
-    let move_speed = 5.0;
-    let rot_speed = 0.7*std::f32::consts::PI; // radians per sec
+    let speed = 300.0;
 
-    let is_translation_mode = !keys.pressed(KeyCode::AltLeft);
-
-    let mut x = 0.0;
-    let mut y = 0.0;
-    let mut z = 0.0;
+    let mut direction = Vec2::ZERO;
 
     if keys.pressed(KeyCode::KeyA) {
-        x -= 1.0;
+        direction.x -= 1.0;
     }
     if keys.pressed(KeyCode::KeyD) {
-        x += 1.0;
+        direction.x += 1.0;
     }
     if keys.pressed(KeyCode::KeyW) {
-        z += 1.0;
+        direction.y += 1.0;
     }
     if keys.pressed(KeyCode::KeyS) {
-        z -= 1.0;
-    }
-    if keys.pressed(KeyCode::KeyE) {
-        y += 1.0;
-    }
-    if keys.pressed(KeyCode::KeyQ) {
-        y -= 1.0;
+        direction.y -= 1.0;
     }
 
-    if is_translation_mode {
-        // move in world space (relative to camera)
-        let forward = *transform.forward();
-        let right = *transform.right();
-        let up = *transform.up();
-
-        let mut direction = Vec3::ZERO;
-        direction += x * right;
-        direction += y * up;
-        direction += z * forward;
-
-        if direction.length_squared() > 0.0 {
-            transform.translation += direction/*.normalize()*/ * move_speed * delta;
-        }
-    } else {
-        // rotate in local space
-        // A/D → yaw, W/S → pitch, Q/E → roll
-
-        // flip signs to match "natural" FPS-style camera feel
-        if x != 0.0 {
-            transform.rotate_local_y(-x * rot_speed * delta); // yaw (horizontal)
-        }
-        if z != 0.0 {
-            transform.rotate_local_x(z * rot_speed * delta); // pitch (look up/down)
-        }
-        if y != 0.0 {
-            transform.rotate_local_z(-y * rot_speed * delta); // roll (twist)
-        }
+    if direction != Vec2::ZERO {
+        transform.translation += direction.extend(0.0) * speed * delta;
     }
 }
