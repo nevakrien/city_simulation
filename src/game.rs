@@ -56,8 +56,13 @@ pub fn game_plugin(app: &mut App) {
 #[derive(Component)]
 pub struct OnGameScreen;
 
-#[derive(Component)]
-pub struct Draggable;
+
+#[derive(Component, Debug, Clone, Copy)]
+pub enum Draggable {
+    Circle(f32),    // radius
+    Rect(Vec2),     // half extents
+}
+
 
 #[derive(Component)]
 pub struct Line {
@@ -80,11 +85,12 @@ fn spawn_circle(
     z: f32,
     color: Color,
 ) -> Entity {
-    let mesh = meshes.add(Circle::new(50.0));
+    let radius = 50.0;
+    let mesh = meshes.add(Circle::new(radius));
     commands
         .spawn((
             OnGameScreen,
-            Draggable,
+            Draggable::Circle(radius),
             Mesh2d(mesh),
             MeshMaterial2d(materials.add(color)),
             Transform::from_xyz(position.x, position.y, z),
@@ -177,34 +183,49 @@ fn game_setup(
 pub struct DragTarget(pub Option<Entity>);
 
 
-//TODO make this less janky
 fn select_drag_target_system(
     windows: Query<&Window>,
     buttons: Res<ButtonInput<MouseButton>>,
     camera_q: Query<(&Camera, &GlobalTransform), With<Camera2d>>,
-    draggable_q: Query<(Entity, &Transform), With<Draggable>>,
+    draggable_q: Query<(Entity, &GlobalTransform, &Draggable)>,
     mut drag_target: ResMut<DragTarget>,
 ) {
     let Ok((camera, cam_transform)) = camera_q.get_single() else { return };
     let Ok(window) = windows.get_single() else { return };
     let Some(cursor) = window.cursor_position() else { return };
 
-    let world_pos = camera.viewport_to_world_2d(cam_transform, cursor);
-    let Ok(world_pos) = world_pos else { return };
+    let Ok(world_pos) = camera.viewport_to_world_2d(cam_transform, cursor) else { return };
 
     if buttons.just_pressed(MouseButton::Left) {
-        let closest = draggable_q
-            .iter()
-            .filter(|(_, transform)| transform.translation.truncate().distance(world_pos) < 50.0)
-            .min_by(|(_, a), (_, b)| {
-                a.translation
-                    .truncate()
-                    .distance_squared(world_pos)
-                    .partial_cmp(&b.translation.truncate().distance_squared(world_pos))
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            });
+        let mut candidates = vec![];
 
-        drag_target.0 = closest.map(|(e, _)| e);
+        for (entity, global_transform, shape) in &draggable_q {
+            let local_pos = global_transform
+                .affine()
+                .inverse()
+                .transform_point3(world_pos.extend(0.0))
+                .truncate();
+
+            let hit = match shape {
+                Draggable::Circle(radius) => local_pos.length_squared() <= radius * radius,
+                Draggable::Rect(half_extents) => {
+                    local_pos.x.abs() <= half_extents.x && local_pos.y.abs() <= half_extents.y
+                }
+            };
+
+            if hit {
+                let center_distance = global_transform.translation().truncate().distance_squared(world_pos);
+                let z = global_transform.translation().z;
+                candidates.push((entity, center_distance, z));
+            }
+        }
+
+        candidates.sort_by(|(_, d1, z1), (_, d2, z2)| {
+            d1.partial_cmp(d2).unwrap_or(std::cmp::Ordering::Equal)
+                .then(z2.partial_cmp(z1).unwrap_or(std::cmp::Ordering::Equal))
+        });
+
+        drag_target.0 = candidates.first().map(|(e, _, _)| *e);
     }
 
     if buttons.just_released(MouseButton::Left) {
