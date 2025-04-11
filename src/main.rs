@@ -2,6 +2,7 @@
 //! change some settings or quit. There is no actual game, it will just display the current
 //! settings for 5 seconds before going back to the menu.
 
+use bevy_framepace::debug::DiagnosticsPlugin;
 use iyes_perf_ui::PerfUiPlugin;
 use iyes_perf_ui::entries::PerfUiAllEntries;
 use std::path::Path;
@@ -28,6 +29,11 @@ fn main() {
         .add_plugins((
             DefaultPlugins,
             FrameTimeDiagnosticsPlugin::default(),
+
+            bevy::diagnostic::EntityCountDiagnosticsPlugin,
+            bevy::diagnostic::SystemInformationDiagnosticsPlugin,
+            bevy::render::diagnostic::RenderDiagnosticsPlugin,
+
             PerfUiPlugin,
             
             // LogDiagnosticsPlugin::default(),

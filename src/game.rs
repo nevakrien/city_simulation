@@ -70,16 +70,35 @@ fn game_setup(
     commands.spawn((
         Mesh2d(circle.clone()),
         MeshMaterial2d(color_materials.add(Color::srgb(0.15, 0.3, 0.9))),
-        Transform::from_xyz(39.0, 40.0, 100.0),
+        Transform::from_xyz(39.0, 40.0, 60.0),
 
     ));
 
     commands.spawn((
         Mesh2d(circle),
-        MeshMaterial2d(color_materials.add(Color::srgba(0.3, 0.2, 0.9,0.3))),
-        Transform::from_xyz(0.0,0.0,40.0),
+        MeshMaterial2d(color_materials.add(Color::srgb(0.3, 0.2, 0.9))),
+        Transform::from_xyz(0.0,-100.0,40.0),
 
     ));
+
+    //line
+    let a = Vec2::new(39.0, 40.0);
+    let b = Vec2::new(0.0, -100.0);
+    let mid = (a + b) / 2.0;
+    let diff = b - a;
+    let length = diff.length();
+    let angle = diff.y.atan2(diff.x); // angle in radians
+
+    commands.spawn((
+        Mesh2d(meshes.add(Rectangle::new(length, 4.0))), // 4px thick line
+        MeshMaterial2d(color_materials.add(Color::BLACK)),
+        Transform {
+            translation: Vec3::new(mid.x, mid.y, -10.0), // z between the two circles
+            rotation: Quat::from_rotation_z(angle),
+            ..Default::default()
+        },
+    ));
+
 
     //custom shader
     commands.spawn((
@@ -88,7 +107,7 @@ fn game_setup(
             color: LinearRgba::RED,
             color_texture: Some(asset_server.load("bevy_examples/branding/icon.png")),
         })),
-        Transform::default().with_scale(Vec3::splat(128.)),
+        Transform::from_xyz(400.0,100.0,40.0).with_scale(Vec3::splat(128.)),
     ));
 
 }
@@ -137,8 +156,9 @@ fn camera_control_system_2d(
 
     let delta = time.delta_secs();
     let speed = 300.0;
+    let zoom_speed: f32 = 1.5;
 
-    let mut direction = Vec2::ZERO;
+    let mut direction = Vec3::ZERO;
 
     if keys.pressed(KeyCode::KeyA) {
         direction.x -= 1.0;
@@ -153,7 +173,27 @@ fn camera_control_system_2d(
         direction.y -= 1.0;
     }
 
-    if direction != Vec2::ZERO {
-        transform.translation += direction.extend(0.0) * speed * delta;
+    if direction != Vec3::ZERO {
+        transform.translation += direction * speed * delta;
+    }
+
+
+     // Zoom (scale adjustment)
+    let mut scale_change = 0.0;
+    if keys.pressed(KeyCode::KeyQ) {
+        scale_change += 1.0;
+    }
+    if keys.pressed(KeyCode::KeyE) {
+        scale_change -= 1.0;
+    }
+    if scale_change != 0.0 {
+        let scale_delta = zoom_speed.powf(scale_change * delta);
+        transform.scale *= Vec3::splat(scale_delta);
+
+        // Optional: clamp zoom range
+        transform.scale = transform.scale.clamp(
+            Vec3::splat(0.1),
+            Vec3::splat(10.0),
+        );
     }
 }
