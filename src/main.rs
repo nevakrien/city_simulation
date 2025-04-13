@@ -2,6 +2,7 @@
 //! change some settings or quit. There is no actual game, it will just display the current
 //! settings for 5 seconds before going back to the menu.
 
+use city_simulation::rng;
 use bevy_framepace::debug::DiagnosticsPlugin;
 use iyes_perf_ui::PerfUiPlugin;
 use iyes_perf_ui::entries::PerfUiAllEntries;
@@ -10,6 +11,9 @@ use bevy::{
     prelude::*,
     diagnostic::{LogDiagnosticsPlugin,FrameTimeDiagnosticsPlugin}
 };
+
+
+
 
 use city_simulation::{
     game,
@@ -38,6 +42,7 @@ fn main() {
             
             // LogDiagnosticsPlugin::default(),
         ))
+
         
         // Insert as resource the initial value for the settings resources
         
@@ -48,6 +53,7 @@ fn main() {
             SettingPlugin::new(Path::new("assets/settings/quality.json"),DisplayQuality::Medium),
 
         ))
+
         // .insert_resource(DisplayQuality::Medium)
         // .insert_resource(Volume(70))
 
@@ -56,7 +62,7 @@ fn main() {
         .init_state::<StageSelect>()
         .add_systems(Startup, setup)
         // Adds the plugins for each state
-        .add_plugins((splash::splash_plugin, menu::menu_plugin, game::game_plugin))
+        .add_plugins((splash::splash_plugin,rng::rng_plugin, menu::menu_plugin, game::game_plugin))
         .run();
 }
 

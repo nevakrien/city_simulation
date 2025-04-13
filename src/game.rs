@@ -10,6 +10,7 @@ use bevy::{
 use crate::{
     common::{despawn_screen,StageSelect},
     settings::globals::{DisplayQuality, Volume},
+    rng::SimpleRng,
     // graphics::{ATTRIBUTE_BLEND_COLOR, CustomMaterial, DumbyMatrial},
     menus::{
         settings::SettingsState,
@@ -98,6 +99,28 @@ fn spawn_circle(
         .id()
 }
 
+fn spawn_square(
+    commands: &mut Commands,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<ColorMaterial>,
+    position: Vec2,
+    z: f32,
+    color: Color,
+) -> Entity {
+    let rect = Vec2::new(90.0, 90.0);
+    let mesh = meshes.add(Rectangle::new(rect.x, rect.y));
+    commands
+        .spawn((
+            OnGameScreen,
+            Draggable::Rect(rect / 2.0), // store half-extents for hit detection!
+            Mesh2d(mesh),
+            MeshMaterial2d(materials.add(color)),
+            Transform::from_xyz(position.x, position.y, z),
+        ))
+        .id()
+}
+
+
 fn spawn_line(
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,
@@ -122,10 +145,17 @@ fn spawn_line(
     ));
 }
 
+// fn next_float( rng: &mut GlobalEntropy<WyRand>) ->f32{
+//     (rng.next_u32() as f64 /  u32::MAX as f64) as f32
+// }
+
 fn game_setup(
     mut commands: Commands,
     _display_quality: Res<DisplayQuality>,
     _volume: Res<Volume>,
+
+    mut rng:ResMut<SimpleRng>,
+
 
     asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -138,6 +168,7 @@ fn game_setup(
     let z = 40.0;
     let color1 = Color::srgb(0.15, 0.3, 0.9);
     let color2 = Color::srgb(0.3, 0.2, 0.9);
+    let color3 = Color::srgb(0.9, 0.6, 0.3);
 
     let positions = [
         Vec2::new(0.0, 0.0),
@@ -150,9 +181,13 @@ fn game_setup(
     let mut entities = vec![];
     for (i, pos) in positions.iter().enumerate() {
         let color = if i % 2 == 0 { color1 } else { color2 };
+        let z = z+rng.next_scaled();
         let e = spawn_circle(&mut commands, &mut meshes, &mut color_materials, *pos, z, color);
         entities.push((e, *pos));
     }
+
+    let pos = Vec2::new(-100.0, -150.0);
+    entities.push((spawn_square(&mut commands, &mut meshes, &mut color_materials, pos, 41.0, color3), pos));
 
     // Draw edges from center node (0) to all others
     for (target_entity, target_pos) in &entities[1..] {

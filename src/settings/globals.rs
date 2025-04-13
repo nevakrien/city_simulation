@@ -69,10 +69,10 @@ impl Default for ManualFpsCap {
 
 impl Slidble for ManualFpsCap{
     fn as_fraction(&self) -> f32{
-        ((self.0-1.0)/199.0) as f32
+        ((self.0-1.0)/249.0) as f32
     }
     fn from_fraction(fraction: f32) -> Self{
-        ManualFpsCap(199.0 as f64*fraction as f64 +1.0)
+        ManualFpsCap(249.0 as f64*fraction as f64 +1.0)
     }
 }
 
